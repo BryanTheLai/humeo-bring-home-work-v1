@@ -1,48 +1,61 @@
-Goal: Create engaging highlights of videos.
+---
+title: Podcast-to-Shorts Pipeline
+type: mvp-spec
+status: draft
+goal: Automate extraction of viral short-form videos from long-form YouTube podcasts.
+input:
+  - YouTube video URL
+output:
+  - Structured clip JSON
+  - 9:16 MP4 shorts
+---
 
-Input: Youtube video
+# Podcast-to-Shorts Pipeline
 
-Process:
-1. Extract transcripts with timestamp
-2. find the highlights in the video i can make short form videos out of, return in json format. JSON with time stamp and tarnscropts.
+## Goal
+Automate extraction of viral short-form videos from long-form YouTube podcasts.
+
+## Input
+- YouTube video URL
+
+## Process
+
+### 1. Ingestion and transcription
+- Download the source video.
+- Generate a word-level transcript with exact timestamps.
+
+### 2. Clip selection
+- Analyze the transcript for strong 30-60 second segments.
+- Return structured JSON for the editor.
+
 ```json
---example
 {
-  "short_form_highlights": [
+  "clips": [
     {
-      "id": 1,
-      "topic": "The $5 Trillion Prediction Market Explosion",
-      "start_timestamp": "4:49",
-      "end_timestamp": "5:31",
+      "clip_id": "001",
+      "topic": "Prediction Market Explosion",
+      "start_time_sec": 289.0,
+      "end_time_sec": 331.5,
+      "duration_sec": 42.5,
       "viral_hook": "Prediction markets could explode to $5 trillion.",
-      "transcript": "Um,.......... "
-    },
-    {
-      "id": 2,
-      "topic": "Prediction Markets vs. Traditional Derivatives",
-      "start_timestamp": "3:44",
-      "end_timestamp": "4:24",
-      "viral_hook": "Prediction markets are the purest form of financial risk.",
-      "transcript": "Yeah,......"
+      "virality_score": 0.94,
+      "transcript": "Full text for subtitle generation...",
+      "suggested_overlay_title": "$5T Prediction Markets"
     }
   ]
 }
 ```
-design and improve this json to have more useful information.
 
-3. Cut the video:
-Use ffmpeg, cut these timelines out.
-So into 2 videos in this case.
+### 3. Segment cutting
+- Parse the JSON.
+- Use FFmpeg to cut each clip by `start_time_sec` and `end_time_sec`.
 
-4. Horizontal to vertical:
-<!-- Bcs we cant just rotate the video, identify all the important subjects.
-<!-- Now detect the faces, and place them in shorts vertical format.
-Exmaple, podcast, left and right.
-Zoom into subject with approprate distance.
-Then 1 top, 1 bottom. --> -->
-Hmmm actually fuck it, just make it like this: https://www.youtube.com/shorts/dKAkONsYGDY
-zoom out. Add title in video, then add subtitles. Done
+### 4. Vertical formatting
+- Convert 16:9 into 9:16.
+- Use a zoomed-out layout.
+- Add a title at the top.
+- Burn subtitles in the center.
 
-5. Add transcripts in the middle.
-
-Output: 2 short videos.
+## Output
+- `N` short-form MP4 files.
+- Ready for TikTok, YouTube Shorts, and Instagram Reels.
