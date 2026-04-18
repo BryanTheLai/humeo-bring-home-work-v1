@@ -13,7 +13,7 @@ Two cooperating Python packages:
 - **`humeo-core/`** (import `humeo_core`) — Reusable deterministic primitives + strict JSON schemas, exposed as MCP tools. Treats editing as a composable pipeline of narrow, testable functions. The `humeo-mcp` console script is still registered as an **alias** for existing MCP configs.
 - **`src/humeo/`** — Thin end-to-end product wrapper. It handles download, transcript, clip selection, subtitle generation, then delegates final rendering to `humeo-core`.
 
-Design spine: HIVE (ByteDance, 2507.02790v1). See `PAPER_BREAKDOWN.md` for the first-principles write-up.
+Design spine: HIVE (ByteDance, 2507.02790v1). See `docs/hive-paper/PAPER_BREAKDOWN.md` for the first-principles write-up.
 
 ---
 
@@ -201,8 +201,8 @@ humeo-bring-home-work-v1/
 │   │       └── vision.py        ← new, vision-LLM + OCR → SceneRegions
 │   └── tests/                   ← 75 tests (package primitives + MCP surface)
 └── docs/
-    ├── hive_paper_blunt_guide.md (prior)
-    ├── PAPER_BREAKDOWN.md       ← full first-principles paper breakdown
+    ├── hive-paper/hive_paper_blunt_guide.md
+    ├── hive-paper/PAPER_BREAKDOWN.md  ← full first-principles paper breakdown
     ├── PIPELINE.md              ← product `run_pipeline` stages + caches
     ├── STUDY_ORDER.md           ← suggested reading order (e.g. one-day prep)
     └── SOLUTIONS.md             ← this file
@@ -249,7 +249,7 @@ Run `uv run pytest` from the repo root (`testpaths` includes `tests` and `humeo-
 | Memory module (HIVE §3.1.6) for multi-episode state.            | ~2 day | Required if we extend to full drama series.                               |
 | Vision-LLM provider wiring (Gemini/OpenAI client).              | ~2 hr  | Vision primitive is pluggable but currently needs caller to supply `vision_fn`. |
 | End-to-end integration test on the target Cathie Wood video.    | ~1 hr  | Confidence. See `TARGET_VIDEO_ANALYSIS.md` for why that video is the canonical test case. |
-| Pruning + Memory are what close the remaining HIVE gap to human.| —      | See `PAPER_BREAKDOWN.md §8`.                                              |
+| Pruning + Memory are what close the remaining HIVE gap to human.| —      | See `docs/hive-paper/PAPER_BREAKDOWN.md` §8.                                              |
 
 ---
 

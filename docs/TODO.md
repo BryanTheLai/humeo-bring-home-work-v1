@@ -2,8 +2,8 @@
 
 Blunt, first-principles. Three problems were raised. For each: the root cause,
 multiple solutions ranked, the chosen path, and concrete edits with no breaking
-changes. References back to `docs/hive_paper_blunt_guide.md` and
-`docs/PAPER_BREAKDOWN.md`.
+changes. References back to `docs/hive-paper/hive_paper_blunt_guide.md` and
+`docs/hive-paper/PAPER_BREAKDOWN.md`.
 
 Everything below is **additive** to the current schemas. Old callers keep
 working. Old cache files keep working (with a one-line meta version bump).
@@ -17,7 +17,7 @@ not replace the detailed sections below.
 
 ### Already implemented (today’s codebase)
 
-- **Four-stage product pipeline** (`ingest → clip selection → layout vision → render`) as in `src/humeo/pipeline.py` and `docs/PIPELINE.md`.
+- **Product pipeline** (`ingest → clip selection → hook detection → content pruning → layout vision → render`) as in `src/humeo/pipeline.py` and `docs/PIPELINE.md`.
 - **Frames + audio + timing (proof):**
   - **Video + audio:** `source.mp4` + `ffmpeg` audio extract in `humeo.ingest` (`extract_audio`).
   - **Timing:** `transcript.json` with segment/word times; clip windows are `start_time_sec` / `end_time_sec` on `Clip`; `clip_for_render` applies trims; `humeo_core.primitives.compile` cuts with `ffmpeg` `-ss` / `-t`.
@@ -52,7 +52,7 @@ generally available model, or use a project/tier with higher quota.
 
 Translated:
 
-- Keep the 4-stage pipeline (`ingest → clip select → layout vision → render`).
+- Keep the current staged pipeline (`ingest → clip select → hook → prune → layout vision → render`).
 - Keep the five fixed 9:16 layouts in `humeo_core.primitives.layouts`.
 - Keep the two-package split (`humeo` product, `humeo-core` engine).
 - **Add one new cheap multimodal artefact** between ingest and clip selection:
@@ -145,7 +145,7 @@ real inference. What makes it **look** static:
    no scene captions, no character attribution. Result: the selector cannot
    "notice" that a chart appears at 14:15 or that a speaker cut to slides.
    Content-wise, it is forced into transcript-only ranking — exactly the
-   anti-pattern HIVE §1 warns against (see `docs/PAPER_BREAKDOWN.md §1`:
+   anti-pattern HIVE §1 warns against (see `docs/hive-paper/PAPER_BREAKDOWN.md` §1:
    "ASR-only LLM methods … miss facial reactions, gestures, screen text …
    abrupt transitions").
 

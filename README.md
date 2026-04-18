@@ -1,20 +1,45 @@
 # Humeo
 
-Long interview or podcast → vertical 9:16 shorts. FFmpeg render. Gemini for selection, hooks, pruning, layout. OpenAI or WhisperX for transcription.
+Long podcast or interview → vertical 9:16 shorts. Pipeline: download, transcribe, Gemini (clip selection, hook detection, content pruning, layout vision), ffmpeg render.
 
-## Two packages
+**Architecture (static HTML, GitHub Pages):**  
+[https://bryanthelai.github.io/humeo-bring-home-work-v1/hive_architecture_visualization.html](https://bryanthelai.github.io/humeo-bring-home-work-v1/hive_architecture_visualization.html)
+
+## Repo layout
 
 | Path | Role |
 |------|------|
-| `src/humeo/` | Product CLI: ingest, LLM stages, cache, render orchestration. |
-| `humeo-core/` | Shared schemas, primitives (`ingest`, `compile`, vision helpers), optional MCP server. |
+| `src/humeo/` | CLI, pipeline, ingest, Gemini prompts, render adapters |
+| `humeo-core/` | Schemas, ffmpeg compile, primitives, optional MCP server |
+
+## Pipeline (actual order)
+
+```text
+YouTube URL
+  → ingest (source.mp4, transcript.json)
+  → clip selection (Gemini → clips.json)
+  → hook detection (Gemini → hooks.json)
+  → content pruning (Gemini → prune.json)
+  → keyframes + layout vision (Gemini vision → layout_vision.json)
+  → ASS subtitles + humeo-core ffmpeg render → short_<id>.mp4
+```
+
+Details: **`docs/PIPELINE.md`**.
+
+## Five layouts
+
+A short shows at most two on-screen items (`person` or `chart`). That yields five layout modes (see **`TERMINOLOGY.md`**).
 
 ## Requirements
 
 - **Python** ≥ 3.10  
-- **uv** (recommended) — install: [astral.sh/uv](https://docs.astral.sh/uv/)  
-- **ffmpeg** on `PATH`  
-- **API keys** — see `docs/ENVIRONMENT.md`: Gemini required (`GOOGLE_API_KEY` or `GEMINI_API_KEY`); OpenAI if you use Whisper API (`OPENAI_API_KEY` + `HUMEO_TRANSCRIBE_PROVIDER=openai`)
+- **`uv`** — install: [astral.sh/uv](https://docs.astral.sh/uv/)  
+- **`ffmpeg`** — on `PATH` for extract/render  
+- **API keys** — see **`docs/ENVIRONMENT.md`**  
+  - `GOOGLE_API_KEY` or `GEMINI_API_KEY` — required for Gemini stages  
+  - `OPENAI_API_KEY` — if using OpenAI Whisper API (`HUMEO_TRANSCRIBE_PROVIDER=openai`)
+
+Copy **`.env.example`** → **`.env`** (never commit `.env`).
 
 ## Install
 
@@ -23,11 +48,11 @@ uv venv
 uv sync
 ```
 
-Optional local Whisper (GPU stack): `uv sync --extra whisper`
+Optional local WhisperX (heavy; Windows often uses OpenAI API instead):
 
-## Configure
-
-Copy `.env.example` → `.env`. Never commit `.env`.
+```bash
+uv sync --extra whisper
+```
 
 ## Run
 
@@ -35,65 +60,35 @@ Copy `.env.example` → `.env`. Never commit `.env`.
 humeo --long-to-shorts "https://www.youtube.com/watch?v=VIDEO_ID"
 ```
 
-Flags, cache dirs, models: `docs/ENVIRONMENT.md`. Stage-by-stage behavior: `docs/PIPELINE.md`.
-
-## Pipeline (high level)
-
-1. Ingest: download, extract audio, transcribe → `transcript.json`  
-2. Clip selection (Gemini) → `clips.json`  
-2.25. Hook detection (Gemini) → `hooks.json`  
-2.5. Content pruning (Gemini) → `prune.json`  
-3. Keyframes + layout vision (Gemini) → `layout_vision.json`  
-4. Render (ffmpeg) → MP4s under `output/` (gitignored)
-
-## Layout model
-
-A short shows at most **two** on-screen items (`person` or `chart`). Five layouts:
-
-| Layout | Items |
-|--------|--------|
-| `zoom_call_center` | 1 person |
-| `sit_center` | 1 person |
-| `split_chart_person` | 1 chart + 1 person |
-| `split_two_persons` | 2 persons |
-| `split_two_charts` | 2 charts |
-
-Full terms: `TERMINOLOGY.md`.
+Use **`--work-dir`** or **`--no-video-cache`** to control where `source.mp4` and intermediates live (see **`docs/ENVIRONMENT.md`**).
 
 ## Documentation
 
-| Doc | Content |
+| Doc | Purpose |
 |-----|---------|
-| `docs/STUDY_ORDER.md` | Reading order for onboarding. |
-| `docs/PIPELINE.md` | Stages, caches, artifacts. |
-| `docs/ENVIRONMENT.md` | Keys, env vars, CLI mapping. |
-| `docs/SHARING.md` | Public repo, GitHub Pages, what is not in git. |
-| `docs/TARGET_VIDEO_ANALYSIS.md` | Example target input / quality bar. |
-| `docs/hive_architecture_visualization.html` | Static architecture diagram (HIVE-inspired). |
-| `docs/full_run_output.txt` | Example full run log. |
-| `docs/hive-paper/` | HIVE paper notes and prompts excerpt. |
-| `TERMINOLOGY.md` | Glossary. |
-| `humeo-core/docs/ARCHITECTURE.md` | Core engine layout. |
+| **`docs/STUDY_ORDER.md`** | Read order for onboarding |
+| **`docs/PIPELINE.md`** | Stages, caches, JSON contracts |
+| **`docs/ENVIRONMENT.md`** | Keys, env vars, cache layout |
+| **`docs/SHARING.md`** | How to share logs/docs/video without bloating git |
+| **`docs/TARGET_VIDEO_ANALYSIS.md`** | Reference input analysis example |
+| **`docs/full_run_output.txt`** | Example full run log (text) |
+| **`docs/hive-paper/PAPER_BREAKDOWN.md`** | HIVE paper, file mapping §9 |
+| **`docs/hive-paper/hive_paper_blunt_guide.md`** | Short HIVE recap |
+| **`docs/TODO.md`** | Backlog |
+| **`docs/SOLUTIONS.md`** | Design rationale |
+| **`TERMINOLOGY.md`** | Glossary |
 
-Backlog and future work: `docs/TODO.md`.
-
-## Sharing demos
-
-Large outputs (`output/`, `*.mp4`) are **not** committed. Put shorts on **YouTube** (or similar) and link them.
-
-Host **`docs/hive_architecture_visualization.html`**: enable **GitHub Pages** from `/docs` — steps in `docs/SHARING.md`. Entry page: `docs/index.html`.
-
-## Test
+## Tests
 
 ```bash
 uv sync --extra dev
 uv run pytest
 ```
 
+## Sharing outputs
+
+`output/`, `*.mp4`, and `keyframes/` are **gitignored**. Put rendered shorts on **YouTube** or **GitHub Releases**; keep the repo for source and docs. See **`docs/SHARING.md`**.
+
 ## License
 
-MIT — see `LICENSE`.
-
-## Contributing
-
-Issues and PRs welcome. Run `uv run pytest` before you push. Match existing style; keep changes focused.
+See **`LICENSE`** (root) and **`humeo-core/LICENSE`**.

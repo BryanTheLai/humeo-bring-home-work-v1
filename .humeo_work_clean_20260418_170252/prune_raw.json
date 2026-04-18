@@ -1,0 +1,60 @@
+{
+  "decisions": [
+    {
+      "clip_id": "001",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 0.0,
+      "reason": "The clip is already under the 50s threshold and requires no trimming to maintain coherence.",
+      "thought": "The clip is 48.8s, which is slightly below the 50s minimum. I will keep it as is to avoid cutting content that is already concise."
+    },
+    {
+      "clip_id": "002",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 0.0,
+      "reason": "The clip is under the 50s threshold and provides a clear, self-contained argument.",
+      "thought": "The clip is 48.5s. Trimming would push it further below the 50s requirement, so I am keeping the full duration."
+    },
+    {
+      "clip_id": "003",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 10.5,
+      "reason": "Removed the trailing filler and repetitive conclusion starting at 60s.",
+      "thought": "The clip is 70.5s. Trimming the end removes the repetitive 'In fact, we thought' filler, bringing the duration to 60s, which is well within the 50-90s range."
+    },
+    {
+      "clip_id": "004",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 0.0,
+      "reason": "The clip is 56.8s and provides a logical flow from historical context to modern deflationary trends.",
+      "thought": "The clip is already within the 50-90s range and the narrative structure is tight."
+    },
+    {
+      "clip_id": "005",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 2.18,
+      "reason": "Removed the trailing sentence fragment about the late 70s to keep the focus on the Trumponomics comparison.",
+      "thought": "The clip is 47.9s. Trimming the final fragment leaves 45.72s, which is slightly under the 50s limit, but the content is highly focused. I will keep the full clip to stay closer to the 50s requirement."
+    },
+    {
+      "clip_id": "006",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 0.0,
+      "reason": "The clip is 59.4s and provides a clear, logical explanation of debt-to-equity ratios.",
+      "thought": "The clip is within the 50-90s range and requires no trimming."
+    },
+    {
+      "clip_id": "007",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 0.0,
+      "reason": "The clip is 44.7s; while slightly under the 50s limit, it is a complete, high-value explanation of AI's impact on labor costs.",
+      "thought": "The clip is concise and informative. Trimming would only hurt the narrative flow."
+    },
+    {
+      "clip_id": "008",
+      "trim_start_sec": 0.0,
+      "trim_end_sec": 0.0,
+      "reason": "The clip is 58.2s and provides a comprehensive overview of consumer sentiment.",
+      "thought": "The clip is within the 50-90s range and requires no trimming."
+    }
+  ]
+}

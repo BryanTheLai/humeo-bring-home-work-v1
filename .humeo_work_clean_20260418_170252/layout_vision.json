@@ -1,0 +1,328 @@
+{
+  "clips": {
+    "001": {
+      "instruction": {
+        "clip_id": "001",
+        "layout": "sit_center",
+        "zoom": 1.0,
+        "person_x_norm": 0.5,
+        "chart_x_norm": 0.0,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": null,
+        "split_person_region": null,
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "sit_center",
+        "person_bbox": {
+          "x1": 0.31,
+          "y1": 0.07,
+          "x2": 0.69,
+          "y2": 0.95
+        },
+        "chart_bbox": null,
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains a single speaker centered in the shot. The lower-third graphic is part of the broadcast style but does not constitute a separate chart item for the purpose of this framing."
+      }
+    },
+    "002": {
+      "instruction": {
+        "clip_id": "002",
+        "layout": "zoom_call_center",
+        "zoom": 1.0,
+        "person_x_norm": 0.5,
+        "chart_x_norm": 0.0,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": null,
+        "split_person_region": null,
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "zoom_call_center",
+        "person_bbox": {
+          "x1": 0.25,
+          "y1": 0.0,
+          "x2": 0.75,
+          "y2": 1.0
+        },
+        "chart_bbox": null,
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame features a single speaker in a webcam-style setup. The text overlay is a lower-third graphic and not a primary chart, so a zoom_call_center layout is most appropriate."
+      }
+    },
+    "003": {
+      "instruction": {
+        "clip_id": "003",
+        "layout": "split_chart_person",
+        "zoom": 1.0,
+        "person_x_norm": 0.78,
+        "chart_x_norm": 0.02,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": {
+          "x1": 0.02,
+          "y1": 0.03,
+          "x2": 0.55,
+          "y2": 0.68,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_person_region": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "split_chart_person",
+        "person_bbox": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95
+        },
+        "chart_bbox": {
+          "x1": 0.02,
+          "y1": 0.03,
+          "x2": 0.55,
+          "y2": 0.68
+        },
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains one speaker on the right and one chart on the left, making it ideal for a split layout."
+      }
+    },
+    "004": {
+      "instruction": {
+        "clip_id": "004",
+        "layout": "sit_center",
+        "zoom": 1.0,
+        "person_x_norm": 0.5,
+        "chart_x_norm": 0.0,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": null,
+        "split_person_region": null,
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "split_chart_person",
+        "person_bbox": {
+          "x1": 575,
+          "y1": 65,
+          "x2": 990,
+          "y2": 990
+        },
+        "chart_bbox": {
+          "x1": 15,
+          "y1": 25,
+          "x2": 575,
+          "y2": 695
+        },
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains one speaker on the right and one chart on the left, making split_chart_person the ideal layout for a vertical short."
+      }
+    },
+    "005": {
+      "instruction": {
+        "clip_id": "005",
+        "layout": "split_chart_person",
+        "zoom": 1.0,
+        "person_x_norm": 0.78,
+        "chart_x_norm": 0.02,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": {
+          "x1": 0.02,
+          "y1": 0.04,
+          "x2": 0.57,
+          "y2": 0.69,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_person_region": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "split_chart_person",
+        "person_bbox": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95
+        },
+        "chart_bbox": {
+          "x1": 0.02,
+          "y1": 0.04,
+          "x2": 0.57,
+          "y2": 0.69
+        },
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains one speaker and one chart. A split layout is ideal to maintain visibility of both elements in a vertical format."
+      }
+    },
+    "006": {
+      "instruction": {
+        "clip_id": "006",
+        "layout": "split_chart_person",
+        "zoom": 1.0,
+        "person_x_norm": 0.78,
+        "chart_x_norm": 0.02,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": {
+          "x1": 0.02,
+          "y1": 0.02,
+          "x2": 0.56,
+          "y2": 0.68,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_person_region": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "split_chart_person",
+        "person_bbox": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95
+        },
+        "chart_bbox": {
+          "x1": 0.02,
+          "y1": 0.02,
+          "x2": 0.56,
+          "y2": 0.68
+        },
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains one speaker and one chart. A split layout is ideal to maintain visibility of both elements in a vertical aspect ratio."
+      }
+    },
+    "007": {
+      "instruction": {
+        "clip_id": "007",
+        "layout": "split_chart_person",
+        "zoom": 1.0,
+        "person_x_norm": 0.78,
+        "chart_x_norm": 0.02,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": {
+          "x1": 0.02,
+          "y1": 0.03,
+          "x2": 0.58,
+          "y2": 0.69,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_person_region": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "split_chart_person",
+        "person_bbox": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95
+        },
+        "chart_bbox": {
+          "x1": 0.02,
+          "y1": 0.03,
+          "x2": 0.58,
+          "y2": 0.69
+        },
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains one speaker and one chart. A split layout is ideal for vertical framing to keep both elements visible."
+      }
+    },
+    "008": {
+      "instruction": {
+        "clip_id": "008",
+        "layout": "split_chart_person",
+        "zoom": 1.0,
+        "person_x_norm": 0.78,
+        "chart_x_norm": 0.02,
+        "focus_stack_order": "chart_then_person",
+        "split_chart_region": {
+          "x1": 0.02,
+          "y1": 0.05,
+          "x2": 0.56,
+          "y2": 0.95,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_person_region": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95,
+          "label": "",
+          "confidence": 1.0
+        },
+        "split_second_chart_region": null,
+        "split_second_person_region": null,
+        "top_band_ratio": 0.5
+      },
+      "raw": {
+        "layout": "split_chart_person",
+        "person_bbox": {
+          "x1": 0.58,
+          "y1": 0.05,
+          "x2": 0.98,
+          "y2": 0.95
+        },
+        "chart_bbox": {
+          "x1": 0.02,
+          "y1": 0.05,
+          "x2": 0.56,
+          "y2": 0.95
+        },
+        "second_person_bbox": null,
+        "second_chart_bbox": null,
+        "reason": "The frame contains one speaker and one chart. Using split_chart_person allows both to be clearly visible in a vertical format."
+      }
+    }
+  }
+}

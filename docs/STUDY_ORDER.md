@@ -11,7 +11,7 @@ Blunt: read in this order so you always know **what runs** before **why it is sh
 ## Block 2 — Late morning (1–2 hours): decisions you can defend
 
 4. **`docs/SOLUTIONS.md`** — What you rejected, what you kept, and the three-detector diagram (heuristic / MediaPipe / vision LLM → same `SceneRegions`).
-5. **`docs/PAPER_BREAKDOWN.md`** — Read §0–§2 for the HIVE story, then **§9 (mapping table)** to tie paper rows to modules (`humeo_core.*`).
+5. **`docs/hive-paper/PAPER_BREAKDOWN.md`** — Read §0–§2 for the HIVE story, then **§9 (mapping table)** to tie paper rows to modules (`humeo_core.*`).
 
 ## Block 3 — Afternoon (2 hours): paper shortcut + engine surface
 
@@ -25,7 +25,7 @@ Skim in this order (do not deep-read every line unless you have time):
 
 | Order | File | Why |
 |------:|------|-----|
-| 1 | `src/humeo/pipeline.py` | Stages 1–4 wired together |
+| 1 | `src/humeo/pipeline.py` | Stages 1, 2, 2.25, 2.5, 3, 4 wired together |
 | 2 | `src/humeo/clip_selector.py` | Gemini clip JSON → `Clip` |
 | 3 | `src/humeo/render_window.py` | Trim → ffmpeg source window |
 | 4 | `humeo-core/src/humeo_core/primitives/compile.py` | `-ss` / `-t` + filtergraph + subtitles last |
@@ -39,6 +39,7 @@ Skim in this order (do not deep-read every line unless you have time):
 
 ## Optional / if time
 
+- **`docs/SHARING.md`** — Raw GitHub links, Pages, why MP4s are not in the repo.
 - **`docs/podcast-to-shorts.md`**, **`docs/humeo.md`** — Product wording.
 - **`docs/TODO.md`** — Honest backlog (pruning, memory module).
 - **`docs/bryans_ideas.md`** — Brainstorm context; shipped bbox idea is spelled in `SOLUTIONS.md` §4.
@@ -50,4 +51,4 @@ uv sync --extra dev
 uv run pytest
 ```
 
-If you only remember **three** artifacts after one day, remember: **`PIPELINE.md`**, **`SOLUTIONS.md`**, **`PAPER_BREAKDOWN.md` §9**.
+If you only remember **three** artifacts after one day, remember: **`PIPELINE.md`**, **`SOLUTIONS.md`**, **`hive-paper/PAPER_BREAKDOWN.md` §9**.

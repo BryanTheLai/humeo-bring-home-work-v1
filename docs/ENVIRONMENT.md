@@ -97,3 +97,7 @@ After a successful download, yt-dlp writes **`source.info.json`** next to **`sou
 | `--no-video-cache` | Disables per-video cache dirs |
 | `--force-clip-selection` | Ignores clip-selection cache |
 | `--force-layout-vision` | Ignores layout vision cache |
+
+## See also
+
+- **[`docs/SHARING.md`](SHARING.md)** — Public repo vs raw file URLs vs GitHub Pages; why large media is not committed.

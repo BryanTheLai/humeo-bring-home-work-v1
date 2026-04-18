@@ -2,6 +2,8 @@
 
 This document describes **`humeo.pipeline.run_pipeline`**: what runs when, what is cached, what Gemini returns, and how data flows into ffmpeg.
 
+Visual map (HIVE-inspired, static HTML): [hive_architecture_visualization.html](hive_architecture_visualization.html) — also hosted via GitHub Pages if your fork enables it (see [SHARING.md](SHARING.md)).
+
 ## High-level flow
 
 ```

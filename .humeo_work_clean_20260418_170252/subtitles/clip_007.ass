@@ -1,0 +1,39 @@
+[Script Info]
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 0
+ScaledBorderAndShadow: yes
+YCbCr Matrix: None
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H70000000,-1,0,0,0,100,100,0,0,4,0,0,2,60,60,160,0
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,0:00:00.65,Default,,0,0,0,,And part of it
+Dialogue: 0,0:00:00.65,0:00:02.41,Default,,0,0,0,,is AI Entry level
+Dialogue: 0,0:00:02.41,0:00:04.35,Default,,0,0,0,,jobs are not there
+Dialogue: 0,0:00:04.35,0:00:05.95,Default,,0,0,0,,for college graduates the
+Dialogue: 0,0:00:05.95,0:00:07.87,Default,,0,0,0,,way they have been
+Dialogue: 0,0:00:07.87,0:00:10.09,Default,,0,0,0,,in the past So
+Dialogue: 0,0:00:10.09,0:00:11.15,Default,,0,0,0,,unit labor costs this
+Dialogue: 0,0:00:11.15,0:00:14.69,Default,,0,0,0,,is underlying inflation
+Dialogue: 0,0:00:15.13,0:00:17.75,Default,,0,0,0,,2 4 What's
+Dialogue: 0,0:00:17.75,0:00:18.81,Default,,0,0,0,,interesting about that is
+Dialogue: 0,0:00:18.99,0:00:19.45,Default,,0,0,0,,if you look at
+Dialogue: 0,0:00:19.45,0:00:20.73,Default,,0,0,0,,the TIPS market that's
+Dialogue: 0,0:00:20.84,0:00:22.16,Default,,0,0,0,,what the TIPS market
+Dialogue: 0,0:00:22.16,0:00:24.61,Default,,0,0,0,,says inflation is going
+Dialogue: 0,0:00:24.61,0:00:25.89,Default,,0,0,0,,to be in other
+Dialogue: 0,0:00:25.89,0:00:27.74,Default,,0,0,0,,words no real improvement
+Dialogue: 0,0:00:27.74,0:00:29.53,Default,,0,0,0,,from here If we're
+Dialogue: 0,0:00:29.53,0:00:31.72,Default,,0,0,0,,right and productivity starts
+Dialogue: 0,0:00:31.72,0:00:34.11,Default,,0,0,0,,scaling three
+Dialogue: 0,0:00:34.11,0:00:35.73,Default,,0,0,0,,and into next year
+Dialogue: 0,0:00:35.73,0:00:37.26,Default,,0,0,0,,four or five percent
+Dialogue: 0,0:00:37.86,0:00:39.89,Default,,0,0,0,,this unit labor cost
+Dialogue: 0,0:00:39.89,0:00:41.71,Default,,0,0,0,,growth rate will come
+Dialogue: 0,0:00:41.71,0:00:43.46,Default,,0,0,0,,down and underlying inflation
+Dialogue: 0,0:00:43.46,0:00:44.65,Default,,0,0,0,,will come down

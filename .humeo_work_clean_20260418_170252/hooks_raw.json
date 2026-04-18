@@ -1,0 +1,60 @@
+{
+  "hooks": [
+    {
+      "clip_id": "001",
+      "hook_start_sec": 42.54,
+      "hook_end_sec": 48.8,
+      "hook_text": "This could be the beginning of a resurgence in active equity management.",
+      "reason": "This sentence provides a clear, punchy summary of the topic that works independently of the preceding context."
+    },
+    {
+      "clip_id": "002",
+      "hook_start_sec": 0.0,
+      "hook_end_sec": 4.48,
+      "hook_text": "So over the next few years, we believe that this market could explode up to five trillion dollars in notional volume.",
+      "reason": "It opens with a bold, high-stakes prediction involving a specific, large number, which is a classic viral hook."
+    },
+    {
+      "clip_id": "003",
+      "hook_start_sec": 0.0,
+      "hook_end_sec": 10.12,
+      "hook_text": "One of the questions we put in is, will the U.S. federal deficit to GDP ratio drop below 5 percent for fiscal year 2026?",
+      "reason": "It poses a direct, specific question about a major economic indicator that immediately engages the viewer's curiosity."
+    },
+    {
+      "clip_id": "004",
+      "hook_start_sec": 48.91,
+      "hook_end_sec": 51.55,
+      "hook_text": "All of those are highly deflationary trends.",
+      "reason": "This is a strong, declarative claim that summarizes the preceding list of technologies and provides a clear thesis statement."
+    },
+    {
+      "clip_id": "005",
+      "hook_start_sec": 39.75,
+      "hook_end_sec": 45.72,
+      "hook_text": "And we think Trumponomics resembles greatly, actually, Reaganomics.",
+      "reason": "Comparing current political economic policy to a well-known historical precedent is a high-interest, controversial hook."
+    },
+    {
+      "clip_id": "006",
+      "hook_start_sec": 24.16,
+      "hook_end_sec": 29.85,
+      "hook_text": "Really, you should be comparing debt to equity.",
+      "reason": "This acts as a contrarian insight that challenges conventional wisdom about how to measure debt."
+    },
+    {
+      "clip_id": "007",
+      "hook_start_sec": 2.07,
+      "hook_end_sec": 8.85,
+      "hook_text": "Entry-level jobs are not there for college graduates the way they have been in the past.",
+      "reason": "This addresses a relatable, high-anxiety topic for a large demographic, making it immediately compelling."
+    },
+    {
+      "clip_id": "008",
+      "hook_start_sec": 0.0,
+      "hook_end_sec": 6.02,
+      "hook_text": "Sentiment is terrible, as measured by the University of Michigan.",
+      "reason": "It starts with a strong, negative emotional claim that immediately sets the stakes for the rest of the clip."
+    }
+  ]
+}
