@@ -306,7 +306,7 @@
     <section class="hero">
       <h1>HIVE Inspired Architecture for Investment Videos</h1>
       <p>
-        Based on your code and docs. Shows the current pipeline and the full HIVE-inspired target.
+        Shipped pipeline and HIVE-inspired backlog on one page.
       </p>
       <div class="legend">
         <span class="pill done">✅ Done</span>
@@ -317,38 +317,38 @@
 
     <section class="section">
       <h2>Current Working Flow (What Runs Today)</h2>
-      <p class="sub">From <code>docs/PIPELINE.md</code>: five boxes summarize the path; the full order also runs <strong>keyframes + layout vision</strong> after pruning and before final encode (see internals below).</p>
+      <p class="sub">Five boxes abbreviate the path. Real order: after prune, <strong>keyframes + layout vision</strong>, then encode. Full logic: internals below.</p>
 
       <div class="graph">
         <div class="flow-row">
           <article class="node done">
             <div class="icon">🎬</div>
             <div class="title">Input + Ingest</div>
-            <div class="desc">Download, extract audio, transcribe, cache.</div>
+            <div class="desc">yt-dlp, audio extract, ASR, cache hit skips redo.</div>
             <div class="status">Done</div>
           </article>
           <article class="node done">
             <div class="icon">🤖</div>
             <div class="title">Clip Selection</div>
-            <div class="desc">LLM scores candidate windows.</div>
+            <div class="desc">Gemini: pool, score, rank, keep set.</div>
             <div class="status">Done</div>
           </article>
           <article class="node done">
             <div class="icon">🪝</div>
             <div class="title">Hook Detection</div>
-            <div class="desc">Find hook window per clip.</div>
+            <div class="desc">Real hook window; replaces 0–3s placeholder.</div>
             <div class="status">Done</div>
           </article>
           <article class="node done">
             <div class="icon">✂️</div>
             <div class="title">Content Pruning</div>
-            <div class="desc">Trim low-value lead-in and tail.</div>
+            <div class="desc">Coarse trim: head/tail only; clamped.</div>
             <div class="status">Done</div>
           </article>
           <article class="node done">
             <div class="icon">📱</div>
             <div class="title">Render + Overlay</div>
-            <div class="desc">Render 9:16 shorts with captions.</div>
+            <div class="desc">ffmpeg 1080×1920, ASS, title, compile.</div>
             <div class="status">Done</div>
           </article>
         </div>
@@ -364,32 +364,32 @@
       <div class="tracks">
         <div class="track">
           <h3>🧾 Core Artifacts</h3>
-          <p>`transcript.json`, `clips.json`, `hooks.json`, `prune.json`, `short_*.mp4`.</p>
+          <p>On disk: `transcript.json`, `clips.json`, `hooks.json`, `prune.json`, `layout_vision.json`; output: `short_*.mp4` (local, gitignored).</p>
         </div>
         <div class="track">
           <h3>⚙️ Design Principle</h3>
-          <p>Strict JSON handoffs. Cached stages. Deterministic FFmpeg compile.</p>
+          <p>Pydantic schemas, JSON artifacts, hash-keyed caches; ffmpeg compile is deterministic.</p>
         </div>
         <div class="track">
           <h3>🎯 Domain Fit</h3>
-          <p>Investment videos -> high-signal shorts.</p>
+          <p>Finance long-form → ranked 50–90s vertical clips.</p>
         </div>
       </div>
 
       <div class="internals">
-        <h3>Current pipeline — logic per stage (<code>humeo.pipeline.run_pipeline</code>)</h3>
-        <p style="margin:0 0 10px;font-size:12px;color:var(--muted);">The row above is simplified: after pruning, the code runs <strong>keyframes + layout vision</strong> before render. Details below follow the real call order.</p>
+        <h3>Pipeline logic (<code>humeo.pipeline.run_pipeline</code>)</h3>
+        <p style="margin:0 0 10px;font-size:12px;color:var(--muted);">Abbreviated diagram above. Call order below: prune → keyframes + layout vision → render.</p>
 
         <details class="stage-detail" open>
-          <summary><span>1 · Ingest</span> <span style="font-weight:400;color:var(--muted);">— deterministic; cache skips re-download</span></summary>
+          <summary><span>1 · Ingest</span> <span style="font-weight:400;color:var(--muted);">Deterministic; cache skips re-download</span></summary>
           <div class="body">
             <div class="label">Outputs</div>
-            <p><code>work_dir/source.mp4</code>, <code>transcript.json</code>, optional <code>source.info.json</code> for manifest.</p>
+            <p><code>work_dir/source.mp4</code>, <code>transcript.json</code>; optional <code>source.info.json</code> for manifest.</p>
             <div class="label">Logic</div>
             <ul>
-              <li>If <code>ingest_complete(work_dir)</code>: reuse video + transcript (YouTube id cache path under <code>HUMEO_CACHE_ROOT</code>).</li>
-              <li>Else download via yt-dlp; extract audio; transcribe (OpenAI Whisper API or WhisperX per <code>HUMEO_TRANSCRIBE_PROVIDER</code>).</li>
-              <li>Transcript canonical JSON → <code>transcript_sha256</code> — used by all downstream caches.</li>
+              <li><code>ingest_complete(work_dir)</code> true → reuse <code>source.mp4</code> + <code>transcript.json</code> (per-video dir under <code>HUMEO_CACHE_ROOT</code>).</li>
+              <li>Else: yt-dlp → ffmpeg audio → ASR (OpenAI Whisper API or WhisperX; <code>HUMEO_TRANSCRIBE_PROVIDER</code>).</li>
+              <li>Canonical JSON → <code>transcript_sha256</code>; downstream caches key on it.</li>
             </ul>
           </div>
         </details>
@@ -401,11 +401,11 @@
             <p><code>clips.json</code>, <code>clips.meta.json</code>, <code>clip_selection_raw.json</code>.</p>
             <div class="label">Algorithm</div>
             <ul>
-              <li>Prompts: <code>clip_selection_system.jinja2</code> + <code>clip_selection_user.jinja2</code> (override dir: <code>HUMEO_PROMPTS_DIR</code>).</li>
-              <li>Ask for a <strong>pool</strong> of candidates (default 12); each row is a <code>Clip</code> with <code>virality_score</code> ∈ [0,1].</li>
-              <li><strong>Rank:</strong> sort by score; <code>needs_review=True</code> clips get a small penalty vs same score.</li>
-              <li><strong>Keep set:</strong> all clips with score ≥ threshold (default 0.70) and not reviewed-out; if &lt; min kept (5), take top N anyway up to max (8).</li>
-              <li>Response validated with <strong>Pydantic</strong> (<code>humeo_core.schemas.Clip</code>). Cache hit skips LLM when transcript hash + model match <code>clips.meta.json</code>.</li>
+              <li>Prompts: <code>clip_selection_system.jinja2</code>, <code>clip_selection_user.jinja2</code>; override: <code>HUMEO_PROMPTS_DIR</code>.</li>
+              <li>Pool size default 12; each candidate parses as <code>Clip</code>, <code>virality_score</code> ∈ [0,1].</li>
+              <li>Sort by score; <code>needs_review=True</code> loses tiebreak vs same score.</li>
+              <li>Keep: score ≥ threshold (0.70 default), not reviewed-out; if count &lt; min (5), fill from top until max (8).</li>
+              <li>Pydantic: <code>humeo_core.schemas.Clip</code>. Cache skip: <code>clips.meta.json</code> matches transcript hash + model.</li>
             </ul>
           </div>
         </details>
@@ -416,11 +416,11 @@
             <div class="label">Artifacts</div>
             <p><code>hooks.json</code>, <code>hooks.meta.json</code>, <code>hooks_raw.json</code>.</p>
             <div class="label">Why</div>
-            <p>Clip selector often echoes the prompt’s <code>[0, 3]s</code> hook placeholder. That fingerprint would block start-trims in pruning. This stage overwrites <code>hook_start_sec</code> / <code>hook_end_sec</code> with a validated window per clip.</p>
+            <p>Selector copies <code>[0, 3]s</code> hook example; that blocks start-trims in prune. Stage 2.25 overwrites <code>hook_start_sec</code> / <code>hook_end_sec</code> per clip after validation.</p>
             <div class="label">Logic</div>
             <ul>
-              <li>Validate: <code>0 ≤ hook_start &lt; hook_end ≤ clip.duration</code>, duration bounds (see hook prompt).</li>
-              <li><code>_looks_like_default_hook(0, 3)</code> is treated as “no real hook” for later clamps if detection is off.</li>
+              <li>Bounds: <code>0 ≤ hook_start &lt; hook_end ≤ clip.duration</code>; min/max hook length per prompt.</li>
+              <li>Exact <code>(0, 3)</code> match → <code>_looks_like_default_hook</code> → clamps treat as no hook if detection skipped.</li>
             </ul>
           </div>
         </details>
@@ -431,14 +431,14 @@
             <div class="label">Artifacts</div>
             <p><code>prune.json</code>, <code>prune_raw.json</code>, <code>prune.meta.json</code>.</p>
             <div class="label">Definition</div>
-            <p><strong>Coarse</strong> = contiguous trim only: move in-point forward and out-point backward. No middle cuts. Writes <code>trim_start_sec</code> / <code>trim_end_sec</code> on each <code>Clip</code>.</p>
-            <div class="label">Clamp algorithm (after LLM)</div>
+            <p><strong>Coarse</strong> = head/tail only: shift in-point in, out-point in. No internal splices. Writes <code>trim_start_sec</code>, <code>trim_end_sec</code> on <code>Clip</code>.</p>
+            <div class="label">Clamp (post-LLM)</div>
             <ul>
-              <li>Cap total trim by <code>prune_level</code> (conservative / balanced / aggressive → max % of clip length).</li>
-              <li>Enforce <code>MIN_CLIP_DURATION_SEC</code> (50s) after trims.</li>
-              <li>If hook is real: do not trim start past <code>hook_start − 0.25s</code> nor end past tail that would remove hook tail (symmetric guard).</li>
-              <li>Optional: snap trims to transcript segment boundaries to avoid mid-sentence cuts.</li>
-              <li>Failure path: LLM/API error → <strong>no-op</strong> <code>0 / 0</code> trims for that clip; pipeline continues.</li>
+              <li><code>prune_level</code> caps total trim as % of clip length (conservative / balanced / aggressive).</li>
+              <li>Post-trim duration ≥ <code>MIN_CLIP_DURATION_SEC</code> (50).</li>
+              <li>Real hook: start trim ≤ <code>hook_start − 0.25s</code>; end trim capped so hook tail stays in window (symmetric ±0.25s).</li>
+              <li>Segment snap: trims snapped to transcript phrase boundaries when snap logic applies (<code>content_pruning.py</code>).</li>
+              <li>LLM/API fail: trims <code>0, 0</code> for that clip; run continues.</li>
             </ul>
           </div>
         </details>
@@ -450,10 +450,10 @@
             <p><code>work_dir/keyframes/*.jpg</code>, <code>layout_vision.json</code>, <code>layout_vision.meta.json</code>.</p>
             <div class="label">Logic</div>
             <ul>
-              <li>Build <code>Scene</code> per clip using <code>clip_for_render(clip)</code> — applies trims from Stage 2.5 so keyframe times match the export window.</li>
-              <li><code>extract_keyframes</code> (ffmpeg snapshot) — one frame per clip window.</li>
-              <li>Vision: fixed JSON schema → <code>LayoutInstruction</code> per clip (layout enum + optional normalized bboxes for split modes). Prompt: inline <code>GEMINI_LAYOUT_VISION_PROMPT</code> in <code>layout_vision.py</code>.</li>
-              <li>Cache on transcript hash + clips hash + vision model id.</li>
+              <li><code>clip_for_render(clip)</code> → trimmed timeline; one <code>Scene</code> per clip for keyframe time range.</li>
+              <li><code>extract_keyframes</code>: ffmpeg snapshot, one image per clip.</li>
+              <li>Gemini vision: JSON → <code>LayoutInstruction</code> (layout enum; normalized bboxes for splits). Prompt string: <code>GEMINI_LAYOUT_VISION_PROMPT</code> in <code>layout_vision.py</code>.</li>
+              <li>Cache key: transcript hash + clips hash + vision model id.</li>
             </ul>
           </div>
         </details>
@@ -465,8 +465,8 @@
             <p><code>output/short_&lt;id&gt;.mp4</code> + per-clip ASS under <code>work_dir/subtitles/</code>.</p>
             <div class="label">Logic</div>
             <ul>
-              <li><code>clip_for_render</code> → <code>effective_export_bounds</code>: export window = <code>[start,end]</code> narrowed by <code>trim_*</code> only; hook fields cleared after mapping (hook was metadata for pruning).</li>
-              <li><code>humeo_core.primitives.compile</code>: build ffmpeg graph from <code>LayoutInstruction</code> (five layouts, max two on-screen items); burn subtitles + title overlay.</li>
+              <li><code>effective_export_bounds</code>: source window = clip bounds minus <code>trim_*</code>; hooks do not widen/narrow export (metadata for prune only); <code>clip_for_render</code> clears hook fields.</li>
+              <li><code>humeo_core.primitives.compile</code>: filtergraph from <code>LayoutInstruction</code>; five layouts; ≤2 on-screen items; ASS + drawtext title.</li>
             </ul>
           </div>
         </details>
@@ -475,38 +475,38 @@
 
     <section class="section">
       <h2>Full Planned Architecture (HIVE Alternative You Are Building)</h2>
-      <p class="sub">Full target map. Backlogged items are faded.</p>
+      <p class="sub">North-star modules. Backlogged nodes use reduced opacity.</p>
 
       <div class="graph">
         <div class="flow-row">
           <article class="node done">
             <div class="icon">🎞️</div>
             <div class="title">A1. Media Ingest</div>
-            <div class="desc">Source capture, ASR, keyframes, scene cuts.</div>
+            <div class="desc">ASR in product; scene/keyframe primitives in core.</div>
             <div class="status">Done</div>
           </article>
           <article class="node backlog">
             <div class="icon">🧠</div>
             <div class="title">A2. Narrative Context</div>
-            <div class="desc">Scene captions, global summary, value thread.</div>
+            <div class="desc">Pre-select multimodal context artifact.</div>
             <div class="status">Backlogged</div>
           </article>
           <article class="node backlog">
             <div class="icon">👤</div>
             <div class="title">A3. Character + Dialogue Fusion</div>
-            <div class="desc">Speaker attribution and OCR+ASR correction.</div>
+            <div class="desc">Diarization + OCR anchor + merge (paper path).</div>
             <div class="status">Backlogged</div>
           </article>
           <article class="node backlog">
             <div class="icon">🗂️</div>
             <div class="title">A4. Cross-Episode Memory</div>
-            <div class="desc">Persistent narrative state across episodes.</div>
+            <div class="desc">Cross-upload character + plot store.</div>
             <div class="status">Backlogged</div>
           </article>
           <article class="node progress">
             <div class="icon">🏗️</div>
             <div class="title">B. Structured Editing Core</div>
-            <div class="desc">Highlight -> Hook/Outro -> Pruning.</div>
+            <div class="desc">Decomposed edit stages vs one-shot.</div>
             <div class="status">In Progress</div>
           </article>
         </div>
@@ -523,31 +523,31 @@
           <article class="node done">
             <div class="icon">📈</div>
             <div class="title">B1. Highlight Ranking</div>
-            <div class="desc">Rule-scored finance highlights.</div>
+            <div class="desc">Rubric + score + rank in selector.</div>
             <div class="status">Done</div>
           </article>
           <article class="node progress">
             <div class="icon">🪝</div>
             <div class="title">B2. Hook + Outro Boundaries</div>
-            <div class="desc">Optimize start and end windows.</div>
+            <div class="desc">Hook shipped; timed outro schema not.</div>
             <div class="status">In Progress</div>
           </article>
           <article class="node done">
             <div class="icon">🧹</div>
             <div class="title">B3. Coarse Content Pruning</div>
-            <div class="desc">Clean inner windows with safety checks.</div>
+            <div class="desc">Stage 2.5: LLM trim + clamp.</div>
             <div class="status">Done</div>
           </article>
           <article class="node backlog">
             <div class="icon">🔬</div>
             <div class="title">B4. Micro-Pruning</div>
-            <div class="desc">Silence and filler micro-cuts.</div>
+            <div class="desc">VAD/splice; not in compiler v1.</div>
             <div class="status">Backlogged</div>
           </article>
           <article class="node done">
             <div class="icon">🎥</div>
             <div class="title">C. Compile + Publish</div>
-            <div class="desc">Compile timeline and render final shorts.</div>
+            <div class="desc">humeo-core compile → MP4.</div>
             <div class="status">Done</div>
           </article>
         </div>
@@ -562,44 +562,44 @@
       </div>
 
       <div class="planned-detail">
-        <h4>Target map — what each block would add (paper vs repo)</h4>
+        <h4>Backlog blocks — paper vs this repo</h4>
         <details class="stage-detail">
           <summary><span>A2 · Narrative context</span> <span style="font-weight:400;color:var(--muted);">Backlogged</span></summary>
           <div class="body">
-            <p>HIVE §3.1.5 style: one multimodal pass over sparse frames + transcript → <code>narrative_context.json</code> (global summary, per-scene captions, “value thread”). Feeds clip selection so charts/OCR matter before windows are chosen.</p>
+            <p>HIVE §3.1.5 analogue: sparse frames + transcript → <code>narrative_context.json</code> (summary, scene captions, value thread). Clip select consumes it so charts/OCR influence windows before Stage 2.</p>
           </div>
         </details>
         <details class="stage-detail">
           <summary><span>A3 · Character + dialogue fusion</span> <span style="font-weight:400;color:var(--muted);">Backlogged</span></summary>
           <div class="body">
-            <p>Paper path: diarization + face clusters + LLM reconciliation; OCR subtitles as anchor vs ASR. This repo uses transcript text only for selection; no speaker-ID or OCR-merge stage in the product pipeline yet.</p>
+            <p>Paper: diarization, face clusters, LLM merge; OCR as anchor vs ASR. Product today: ASR text only at Stage 2; no speaker-ID or OCR-merge.</p>
           </div>
         </details>
         <details class="stage-detail">
           <summary><span>A4 · Cross-episode memory</span> <span style="font-weight:400;color:var(--muted);">Backlogged</span></summary>
           <div class="body">
-            <p>HIVE memory module: persistent character + plot state across uploads. Here: single-video state only; artifacts are per <code>work_dir</code>.</p>
+            <p>Paper: cross-episode memory. Here: one video per <code>work_dir</code>; no shared character DB.</p>
           </div>
         </details>
         <details class="stage-detail">
           <summary><span>B2 · Hook + outro boundaries</span> <span style="font-weight:400;color:var(--muted);">In progress</span></summary>
           <div class="body">
-            <p><strong>Hook:</strong> implemented (Stage 2.25). <strong>Outro:</strong> no <code>outro_*</code> fields in schema; “ending” is prompt guidance inside clip selection + prune, not a separate timed boundary module like HIVE’s opening/ending Cartesian search.</p>
+            <p><strong>Hook:</strong> Stage 2.25, schema fields. <strong>Outro:</strong> no <code>outro_*</code>; endings live in prompts (selector + prune), not HIVE-style O×E boundary search over scenes.</p>
           </div>
         </details>
         <details class="stage-detail">
           <summary><span>B4 · Micro-pruning</span> <span style="font-weight:400;color:var(--muted);">Backlogged</span></summary>
           <div class="body">
-            <p>Would remove short silence spans and filler inside the clip (VAD / silencedetect / verbatim ASR) and splice in the compiler. Current compiler assumes one contiguous <code>-ss</code>/<code>-t</code> window per short.</p>
+            <p>Cut internal silence/filler (VAD, silencedetect, verbatim ASR); compiler would splice segments. Today: one contiguous <code>-ss</code>/<code>-t</code> per short.</p>
           </div>
         </details>
       </div>
 
       <div class="keylist">
-        <div class="keyitem"><b>Current state:</b> HIVE-inspired core is running for investment videos.</div>
-        <div class="keyitem"><b>In progress:</b> Explicit outro as data; full Module A (narrative + fusion + memory).</div>
-        <div class="keyitem"><b>Backlogged:</b> Narrative context, OCR fusion, memory, micro-pruning.</div>
-        <div class="keyitem"><b>Design:</b> Clear flow, clear status, low visual noise.</div>
+        <div class="keyitem"><b>Shipped:</b> Staged pipeline + JSON caches + ffmpeg compile for finance long-form.</div>
+        <div class="keyitem"><b>In progress:</b> Outro as first-class data; Module A (narrative, fusion, memory).</div>
+        <div class="keyitem"><b>Backlogged:</b> <code>narrative_context</code>, OCR fusion, cross-episode memory, micro-prune.</div>
+        <div class="keyitem"><b>UI:</b> Status color = Done / In Progress / Backlogged.</div>
       </div>
     </section>
   </main>
