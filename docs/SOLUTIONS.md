@@ -195,7 +195,7 @@ humeo-bring-home-work-v1/
 │   │       ├── compile.py       ← ffmpeg command builder + runner
 │   │       ├── face_detect.py   ← new, MediaPipe → SceneRegions
 │   │       ├── ingest.py        ← scene detection + keyframes + ASR
-│   │       ├── layouts.py       ← 3 fixed 9:16 filtergraphs
+│   │       ├── layouts.py       ← 5 fixed 9:16 filtergraphs (max 2 items)
 │   │       ├── select_clips.py  ← density-based clip picker
 │   │       └── vision.py        ← new, vision-LLM + OCR → SceneRegions
 │   └── tests/                   ← 53 tests, all green

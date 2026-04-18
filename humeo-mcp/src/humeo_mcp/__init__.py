@@ -3,7 +3,7 @@
 First-principles design (rocket analogy):
     Container  -> schemas.py        (strict JSON contracts)
     Landing gear -> primitives/ingest.py, primitives/compile.py  (deterministic local)
-    Thrusters    -> primitives/layouts.py                         (3 fixed 9:16 layouts)
+    Thrusters    -> primitives/layouts.py                         (5 fixed 9:16 layouts, max 2 items)
     Pilot        -> primitives/classify.py, primitives/select_clips.py (heuristic, LLM-ready)
     Control panel -> server.py      (FastMCP tools that expose all primitives)
 """

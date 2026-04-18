@@ -557,7 +557,10 @@ Explicit. So we don't silently scope-creep into HIVE.
   covered as a gap in `docs/SOLUTIONS.md §9`.
 - **No training data, no custom models.** Everything is prompting +
   schemas.
-- **No new layout kinds.** Still exactly three thrusters.
+- ~~**No new layout kinds.** Still exactly three thrusters.~~
+  **Updated:** we now ship five thrusters (`zoom_call_center`, `sit_center`,
+  `split_chart_person`, `split_two_persons`, `split_two_charts`) — the
+  "max 2 items" rule makes the extra two layouts near-free to add.
 - **No change to the ingest provider selection** (WhisperX vs OpenAI).
 - **No change to `humeo-mcp`'s MCP server tools.** All modifications are
   schema-additive and behaviour is opt-in via new fields.

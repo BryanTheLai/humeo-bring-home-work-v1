@@ -10,7 +10,7 @@ That analogy maps exactly onto this MCP:
 | --------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------- |
 | Container       | `src/humeo_mcp/schemas.py`                                       | Strict JSON contracts every stage reads/writes.                         |
 | Landing gear    | `src/humeo_mcp/primitives/ingest.py`                             | Deterministic local extraction (scenes, keyframes, transcript).         |
-| Thrusters (×3)  | `src/humeo_mcp/primitives/layouts.py`                            | Three fixed 9:16 crop/compose recipes.                                  |
+| Thrusters (×5)  | `src/humeo_mcp/primitives/layouts.py`                            | Five fixed 9:16 crop/compose recipes (max 2 on-screen items).           |
 | Pilot           | `primitives/classify.py` + `primitives/select_clips.py`          | Heuristic + LLM-ready decision makers.                                  |
 | Compiler        | `src/humeo_mcp/primitives/compile.py`                            | Deterministic ffmpeg assembly.                                          |
 | Control panel   | `src/humeo_mcp/server.py`                                        | MCP tools exposing every primitive.                                     |
@@ -38,24 +38,26 @@ giant model call. Three consequences flow from that:
    before returning; parse failures degrade gracefully to `SIT_CENTER` +
    low confidence, not crashes.
 
-## Why only three layouts?
+## Why only five layouts?
 
-The video format this MCP was designed for has exactly three on-screen
-geometries (the user's observation from the source video):
+The hard rule for this format: **a short shows at most two on-screen
+items**, where an "item" is a `person` or a `chart`. That gives exactly
+five recipes — all implemented as pure functions from
+`LayoutInstruction` to an ffmpeg filtergraph string in `layouts.py`:
 
-- zoom call, one person, center, tight.
-- one person sitting, center, wider.
-- explainer: chart left (~2/3) + person right (~1/3).
+| Layout                 | Items           | Recipe                                        |
+| ---------------------- | --------------- | --------------------------------------------- |
+| `zoom_call_center`     | 1 person        | tight centered 9:16 crop (zoom ≥ 1.25).       |
+| `sit_center`           | 1 person        | wider centered 9:16 crop.                     |
+| `split_chart_person`   | 1 chart + person| source partitioned L/R by bboxes, stacked.    |
+| `split_two_persons`    | 2 persons       | L/R speakers, stacked top/bottom.             |
+| `split_two_charts`     | 2 charts        | L/R charts, stacked top/bottom.               |
 
 A general subject-tracker ML model is orders of magnitude more expensive
-and less reliable than three hand-written crop recipes. The recipes live
-in `plan_zoom_call_center`, `plan_sit_center`, `plan_split_chart_person`
-and are pure functions from `LayoutInstruction` to an ffmpeg filtergraph
-string. They are fully unit-tested.
-
-If a new geometry shows up in future source videos, adding a fourth
-"thruster" is strictly additive: write a new `plan_*` function, add it
-to `_DISPATCH`, add an enum variant. No existing code has to change.
+and less reliable than five hand-written crop recipes. If a new geometry
+ever shows up in future source videos, adding a sixth thruster is
+strictly additive: write a new `plan_*` function, add it to `_DISPATCH`,
+add an enum variant. No existing code has to change.
 
 ## 9:16 layout math
 
@@ -75,19 +77,32 @@ by `zoom`. `x`, `y` center the window on `person_x_norm` / 0.5.
 Dimensions are rounded to even values so libx264 is happy. The window is
 clamped inside the source so a high `person_x_norm` never crops outside.
 
-### `split_chart_person`
+### Split layouts (`split_chart_person`, `split_two_persons`, `split_two_charts`)
 
-The source is split into two independent branches via `split=2`:
+All three splits share one recipe — only the items differ:
 
-- **Top band (60% of output height):** crop the left 2/3 of the source
-  (chart region), fit with `force_original_aspect_ratio=decrease`, and
-  pad to fill the top band. Padding preserves chart readability.
-- **Bottom band (40% of output height):** crop a 1/3-wide window
-  centered on the person (`person_x_norm`), then fill with
-  `force_original_aspect_ratio=increase` + a final crop so the person is
-  cleanly cropped without letterboxing.
+1. **Horizontal partition.** The source is cut at a single vertical seam
+   so the two source strips are **complementary** (no overlap, no gap).
+   When both bboxes are set (Gemini vision), the seam is the midpoint
+   between `left.x2` and `right.x1`. Otherwise the seam defaults to
+   either an even 50/50 (two-of-a-kind splits) or a 2/3 | 1/3 split
+   (legacy `split_chart_person` fallback).
+2. **Vertical crop.** Each strip's vertical extent comes from the
+   corresponding bbox when provided, so each item **fills** its output
+   band instead of being lost in full-height source context.
+3. **Cover-scale to the band.** Each strip is scaled with
+   `force_original_aspect_ratio=increase` + center-cropped to the band
+   dimensions. Bands are always fully painted; no letterbox bars.
+4. **Stack.** Two branches produced by `split=2` are `vstack`-ed into
+   the final 1080×1920.
 
-The two branches are `vstack`-ed into the 1080×1920 output.
+**Band heights** are controlled by `LayoutInstruction.top_band_ratio`,
+which defaults to **0.5** (even 50/50 — the symmetric look Bryan asked
+for after the uneven Cathy Wood shorts). Legacy 60/40 is still reachable
+by setting `top_band_ratio=0.6`.
+
+**Stack order** (for `split_chart_person`) is controlled by
+`focus_stack_order`: chart-on-top (default) or person-on-top.
 
 ## Extensibility story
 

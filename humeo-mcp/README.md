@@ -5,9 +5,8 @@
 First-principles design, from the HIVE paper + Bryan's rocket analogy:
 we don't build doors and windows (general subject-tracker UI, retraining
 models). We build the **container** (schemas), **landing gear** (deterministic
-local extraction), and **three thrusters that point in three directions**
-(the three 9:16 layouts this video format actually uses). Everything else
-is pluggable.
+local extraction), and **five thrusters** (the five 9:16 layouts this video
+format actually uses). Everything else is pluggable.
 
 ## The rocket, in one picture
 
@@ -19,7 +18,7 @@ is pluggable.
    ┌────────────────┬───────────┼────────────────┬─────────────────┐
    ▼                ▼           ▼                ▼                 ▼
  ingest       classify_scenes  select_clips   plan_layout       render_clip
-(scenes +     (3-way layout   (clip picker,   (3 thrusters,    (ffmpeg compile,
+(scenes +     (5-way layout   (clip picker,   (5 thrusters,    (ffmpeg compile,
  keyframes +   classifier)     heuristic +     pure filter      dry-run safe)
  transcript)                   LLM-ready)      math)
                                                  │
@@ -30,29 +29,34 @@ is pluggable.
                                        │  zoom_call_center  │
                                        │  sit_center        │
                                        │  split_chart_person│
+                                       │  split_two_persons │
+                                       │  split_two_charts  │
                                        └────────────────────┘
 ```
 
 Only the classifier and clip-selector have optional LLM hooks; everything
 else is deterministic, local, and cheap.
 
-## Why three layouts?
+## Why five layouts? (the "max 2 items" rule)
 
-The source video this tool was designed for has exactly **three** on-screen
-geometries:
+The hard constraint for this format: **a short shows at most two on-screen
+items** — where an "item" is a `person` (a human speaker) or a `chart`
+(slide, graph, data visual, screenshare). That gives exactly five recipes:
 
-1. **`zoom_call_center`** — one person on a zoom call, subject in the middle,
-   tight crop (the default zoom is `1.25`).
-2. **`sit_center`** — one person sitting in frame, subject in the middle,
-   wider framing (zoom `1.0`).
-3. **`split_chart_person`** — explainer scene where a chart occupies the
-   left ~2/3 of the source and a person occupies the right ~1/3. In the
-   9:16 output these are stacked: chart 60% top, person 40% bottom.
+1. **`zoom_call_center`** — 1 person, tight zoom-call / webcam framing.
+2. **`sit_center`** — 1 person, interview / seated framing.
+3. **`split_chart_person`** — 1 chart + 1 person, stacked vertically
+   (default: **even 50/50** top/bottom, chart on top).
+4. **`split_two_persons`** — 2 speakers, stacked vertically.
+5. **`split_two_charts`** — 2 charts, stacked vertically.
 
 Because the geometry is bounded, we do NOT need a general subject-tracker
-ML model or a drag-to-highlight UI. We need three small, correct pieces of
+ML model or a drag-to-highlight UI. We need five small, correct pieces of
 crop/compose math. That is exactly what `src/humeo_mcp/primitives/layouts.py`
 is.
+
+See [`TERMINOLOGY.md`](../TERMINOLOGY.md) for the full glossary of terms
+used across these docs (subject, crop, band, seam, bbox, layout, etc.).
 
 ## Install
 
@@ -86,7 +90,7 @@ Tools exposed:
 
 | Tool                              | Purpose                                                                     |
 | --------------------------------- | --------------------------------------------------------------------------- |
-| `list_layouts`                    | Enumerate the 3 supported layouts.                                          |
+| `list_layouts`                    | Enumerate the 5 supported layouts.                                          |
 | `ingest`                          | Scene detection + keyframe extraction (+ optional transcript).              |
 | `classify_scenes`                 | Pixel-heuristic per-scene layout classification.                            |
 | `detect_scene_regions`            | Return the bbox prompt + per-scene jobs (agent runs its own vision model).  |
@@ -96,7 +100,7 @@ Tools exposed:
 | `build_render_cmd`                | Build the ffmpeg command (no execution) — review before spend.              |
 | `render_clip`                     | Build + run ffmpeg to produce a 9:16 MP4.                                   |
 
-Resource: `humeo://layouts` (JSON listing of the 3 layouts).
+Resource: `humeo://layouts` (JSON listing of the 5 layouts).
 
 ### Three interchangeable region detectors
 
@@ -121,13 +125,13 @@ All tools take and return Pydantic-validated JSON. The contracts live in
 - `SceneRegions`              `{scene_id, person_bbox?, chart_bbox?, ocr_text, raw_reason}`
 - `Clip`                      `{clip_id, topic, start_time_sec, end_time_sec, viral_hook, virality_score, transcript, suggested_overlay_title, layout?}`
 - `ClipPlan`                  `{source_path, clips[]}`
-- `LayoutInstruction`         `{clip_id, layout, zoom, person_x_norm, chart_x_norm}`
+- `LayoutInstruction`         `{clip_id, layout, zoom, person_x_norm, chart_x_norm, split_chart_region?, split_person_region?, split_second_chart_region?, split_second_person_region?, top_band_ratio, focus_stack_order}`
 - `RenderRequest` / `RenderResult`
 
 ## First-principles decisions (what we intentionally did NOT build)
 
-- **No giant subject-tracker ML.** The video format has 3 fixed layouts;
-  pixel-level tracking is not needed.
+- **No giant subject-tracker ML.** The video format has 5 fixed layouts
+  (with a hard "max 2 items" rule); pixel-level tracking is not needed.
 - **No drag-and-highlight UI.** An MCP tool is a better "UI" for an
   agent-first workflow. If a human wants to override, they pass a
   `LayoutInstruction` with their own `person_x_norm` / `chart_x_norm` /

@@ -3,6 +3,7 @@
 import argparse
 import logging
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from humeo.config import PipelineConfig
@@ -97,6 +98,47 @@ Examples:
     )
 
     parser.add_argument(
+        "--clean-run",
+        action="store_true",
+        help=(
+            "Run with a fresh work dir and no cache reuse. Implies --no-video-cache, "
+            "--force-clip-selection, --force-layout-vision, and overwrite existing outputs."
+        ),
+    )
+
+    parser.add_argument(
+        "--subtitle-font-size",
+        type=int,
+        default=48,
+        help=(
+            "Caption font size in output pixels. libass is pinned to "
+            "original_size=1080x1920, so this is a true pixel value. "
+            "(default: 48)"
+        ),
+    )
+
+    parser.add_argument(
+        "--subtitle-margin-v",
+        type=int,
+        default=160,
+        help="Caption bottom margin in output pixels (default: 160)",
+    )
+
+    parser.add_argument(
+        "--subtitle-max-words",
+        type=int,
+        default=4,
+        help="Max words per subtitle cue (default: 4)",
+    )
+
+    parser.add_argument(
+        "--subtitle-max-cue-sec",
+        type=float,
+        default=2.2,
+        help="Max subtitle cue duration in seconds (default: 2.2)",
+    )
+
+    parser.add_argument(
         "--verbose", "-v",
         action="store_true",
         help="Enable debug logging",
@@ -111,16 +153,37 @@ def main():
     args = parser.parse_args()
     setup_logging(args.verbose)
 
+    use_video_cache = not args.no_video_cache
+    force_clip_selection = args.force_clip_selection
+    force_layout_vision = args.force_layout_vision
+    overwrite_outputs = False
+    work_dir = args.work_dir
+
+    if args.clean_run:
+        use_video_cache = False
+        force_clip_selection = True
+        force_layout_vision = True
+        overwrite_outputs = True
+        if work_dir is None:
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            work_dir = Path(f".humeo_work_clean_{stamp}")
+
     config = PipelineConfig(
         youtube_url=args.long_to_shorts,
         output_dir=args.output,
-        work_dir=args.work_dir,
-        use_video_cache=not args.no_video_cache,
+        work_dir=work_dir,
+        use_video_cache=use_video_cache,
         cache_root=args.cache_root,
         gemini_model=args.gemini_model,
         gemini_vision_model=args.gemini_vision_model,
-        force_clip_selection=args.force_clip_selection,
-        force_layout_vision=args.force_layout_vision,
+        force_clip_selection=force_clip_selection,
+        force_layout_vision=force_layout_vision,
+        clean_run=args.clean_run,
+        overwrite_outputs=overwrite_outputs,
+        subtitle_font_size=args.subtitle_font_size,
+        subtitle_margin_v=args.subtitle_margin_v,
+        subtitle_max_words_per_cue=args.subtitle_max_words,
+        subtitle_max_cue_sec=args.subtitle_max_cue_sec,
     )
 
     try:

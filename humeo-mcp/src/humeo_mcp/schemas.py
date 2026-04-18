@@ -54,7 +54,14 @@ class ClipSubtitleWords(BaseModel):
 
 
 class FocusStackOrder(str, Enum):
-    """Vertical order for ``SPLIT_CHART_PERSON``: who occupies the top 60% / bottom 40% bands."""
+    """Vertical order for split layouts: which item occupies the top vs bottom band.
+
+    Bands are split by :attr:`LayoutInstruction.top_band_ratio` (default 0.5 = even).
+    For ``SPLIT_CHART_PERSON`` this picks chart-on-top vs person-on-top.
+    For ``SPLIT_TWO_PERSONS`` / ``SPLIT_TWO_CHARTS`` it has no visible meaning
+    (both bands hold the same kind of item); the enum value is retained only
+    so a single stacking recipe drives all three split layouts.
+    """
 
     CHART_THEN_PERSON = "chart_then_person"
     PERSON_THEN_CHART = "person_then_chart"
@@ -71,29 +78,55 @@ class IngestResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Layout system — the 3 "thrusters"
+# Layout system — the 5 "thrusters" (max 2 on-screen items per short)
 # ---------------------------------------------------------------------------
 
 
 class LayoutKind(str, Enum):
-    """The 3 (and only 3) 9:16 layouts used for this specific video format.
+    """The 9:16 layouts. A short contains **at most two** on-screen items.
 
-    Mirrors the three on-screen scene types the user identified:
+    An "item" is one of ``person`` (a human speaker) or ``chart`` (slide, graph,
+    data visual, screenshare). Five combinations are allowed:
 
-    - ``ZOOM_CALL_CENTER``:   1-person zoom call, subject in the middle, tight crop.
-    - ``SIT_CENTER``:         1-person sitting, subject in the middle, wider crop.
-    - ``SPLIT_CHART_PERSON``: explainer scene with a chart on the left (~2/3)
-                              and a person on the right (~1/3). In the 9:16
-                              output these are stacked: chart on top, person below.
+    - ``ZOOM_CALL_CENTER``:   **1 person**, tight webcam/zoom-call framing, centered.
+    - ``SIT_CENTER``:         **1 person**, interview/seated framing, centered.
+    - ``SPLIT_CHART_PERSON``: **1 chart + 1 person** — chart + speaker share the
+                              source frame. Output stacks them vertically
+                              (by default ``focus_stack_order`` = chart-on-top).
+    - ``SPLIT_TWO_PERSONS``:  **2 persons** — two speakers (e.g. interview two-up).
+                              Output stacks them vertically.
+    - ``SPLIT_TWO_CHARTS``:   **2 charts** — two charts/slides side-by-side in source.
+                              Output stacks them vertically.
+
+    The "max 2 items" constraint is the keep-it-simple rule: every rendered short
+    is either one item centered, or two items stacked evenly top/bottom.
     """
 
     ZOOM_CALL_CENTER = "zoom_call_center"
     SIT_CENTER = "sit_center"
     SPLIT_CHART_PERSON = "split_chart_person"
+    SPLIT_TWO_PERSONS = "split_two_persons"
+    SPLIT_TWO_CHARTS = "split_two_charts"
+
+
+# Layouts that stack two items vertically in the 9:16 output.
+SPLIT_LAYOUTS: frozenset[LayoutKind] = frozenset(
+    {
+        LayoutKind.SPLIT_CHART_PERSON,
+        LayoutKind.SPLIT_TWO_PERSONS,
+        LayoutKind.SPLIT_TWO_CHARTS,
+    }
+)
 
 
 class LayoutInstruction(BaseModel):
-    """Per-clip decision telling the compiler which of the 3 layouts to apply."""
+    """Per-clip decision telling the compiler which layout to apply and how to crop.
+
+    Every short is described by exactly one of these, keyed by ``clip_id``. Split
+    layouts additionally carry up to two normalized bounding boxes (chart/person
+    or two-of-a-kind) so the compiler crops source strips that **partition** the
+    source width without overlap or gap.
+    """
 
     clip_id: str
     layout: LayoutKind
@@ -128,6 +161,30 @@ class LayoutInstruction(BaseModel):
     split_person_region: BoundingBox | None = Field(
         default=None,
         description="Optional normalized rect for the speaker crop (Gemini vision).",
+    )
+    split_second_chart_region: BoundingBox | None = Field(
+        default=None,
+        description=(
+            "For ``SPLIT_TWO_CHARTS`` only: second chart bbox. The first chart occupies "
+            "the top output band, this one occupies the bottom band."
+        ),
+    )
+    split_second_person_region: BoundingBox | None = Field(
+        default=None,
+        description=(
+            "For ``SPLIT_TWO_PERSONS`` only: second speaker bbox. The first person "
+            "occupies the top output band, this one occupies the bottom band."
+        ),
+    )
+    top_band_ratio: float = Field(
+        default=0.5,
+        ge=0.2,
+        le=0.8,
+        description=(
+            "Fraction of 9:16 output height used by the top band for split layouts. "
+            "0.5 = EVEN 50/50 split (default — the user-requested symmetric look). "
+            "0.6 historically matched the 'chart dominant / person small' look."
+        ),
     )
 
 
@@ -290,6 +347,22 @@ class RenderRequest(BaseModel):
     width: int = 1080
     height: int = 1920
     subtitle_path: str | None = None
+    subtitle_font_size: int = Field(
+        default=48,
+        ge=10,
+        le=120,
+        description=(
+            "Caption font size in **output pixels** (libass is pinned to "
+            "``original_size=width x height`` by the compiler, so this is a "
+            "true pixel value, not the old PlayResY=288 unit)."
+        ),
+    )
+    subtitle_margin_v: int = Field(
+        default=160,
+        ge=0,
+        le=800,
+        description="Vertical caption margin in output pixels (bottom-anchored).",
+    )
     title_text: str = ""
     mode: Literal["normal", "dry_run"] = "normal"
 

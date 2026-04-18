@@ -8,18 +8,18 @@ any interface.
 Tools:
 
     humeo.ingest                      — Stage 1 extraction (scenes + keyframes [+ transcript])
-    humeo.classify_scenes             — Assign one of 3 layouts to each scene (pixel heuristic)
+    humeo.classify_scenes             — Assign one of 5 layouts to each scene (pixel heuristic)
     humeo.classify_scenes_with_vision — Assign layouts using bboxes from a vision LLM + OCR
     humeo.detect_scene_regions        — Raw LLM bbox output per scene keyframe (OCR-assisted)
     humeo.select_clips                — Pick top clips from a transcript (heuristic)
     humeo.plan_layout                 — Return the ffmpeg filtergraph for a given layout
     humeo.build_render_cmd            — Build the full ffmpeg command (dry-run safe)
     humeo.render_clip                 — Build + actually run ffmpeg to produce a 9:16 clip
-    humeo.list_layouts                — List the 3 available layouts (discovery)
+    humeo.list_layouts                — List the 5 available layouts (discovery)
 
 Resources:
 
-    humeo://layouts             — JSON listing of the 3 layouts + description
+    humeo://layouts             — JSON listing of the 5 layouts + description
 """
 
 from __future__ import annotations
@@ -64,27 +64,50 @@ mcp = FastMCP(
 
 @mcp.tool()
 def list_layouts() -> dict[str, Any]:
-    """Return the 3 fixed 9:16 layouts this server supports.
+    """Return the 5 fixed 9:16 layouts this server supports.
 
-    Use this to discover the set of ``LayoutKind`` values before classifying
-    scenes or requesting renders.
+    Every short shows **at most two** on-screen items (person/chart), which
+    gives exactly five recipes. Use this to discover the set of
+    :class:`LayoutKind` values before classifying scenes or requesting
+    renders.
     """
 
     return {
         "layouts": [
             {
                 "kind": LayoutKind.ZOOM_CALL_CENTER.value,
-                "description": "1-person zoom call, subject centered, tight crop (zoom >= 1.25).",
+                "items": ["person"],
+                "description": "1 person, tight zoom-call / webcam framing, centered.",
             },
             {
                 "kind": LayoutKind.SIT_CENTER.value,
-                "description": "1-person sitting, subject centered, wider framing.",
+                "items": ["person"],
+                "description": "1 person, interview / seated framing, centered.",
             },
             {
                 "kind": LayoutKind.SPLIT_CHART_PERSON.value,
+                "items": ["chart", "person"],
                 "description": (
-                    "Explainer: chart left (~2/3) + person right (~1/3) in the source, "
-                    "stacked vertically in the 9:16 output (chart 60% top, person 40% bottom)."
+                    "1 chart + 1 person. Source is partitioned left/right by the chart and "
+                    "person bboxes (falling back to a 2/3 | 1/3 split); each strip is scaled "
+                    "to fill its output band. Bands default to an even 50/50 vertical split; "
+                    "configurable via ``top_band_ratio`` and swappable via ``focus_stack_order``."
+                ),
+            },
+            {
+                "kind": LayoutKind.SPLIT_TWO_PERSONS.value,
+                "items": ["person", "person"],
+                "description": (
+                    "2 people (interview two-up / panel). Left speaker in the top band, right "
+                    "speaker in the bottom band; seam sits between the two person bboxes."
+                ),
+            },
+            {
+                "kind": LayoutKind.SPLIT_TWO_CHARTS.value,
+                "items": ["chart", "chart"],
+                "description": (
+                    "2 charts / slides side-by-side in source. Left chart on top, right chart "
+                    "on bottom; each is scaled to fill its band."
                 ),
             },
         ]
@@ -133,7 +156,7 @@ def ingest(
 
 @mcp.tool()
 def classify_scenes(scenes: list[dict[str, Any]]) -> dict[str, Any]:
-    """Classify each scene into exactly one of the 3 supported layouts.
+    """Classify each scene into exactly one of the 5 supported layouts.
 
     Uses an offline pixel heuristic on each scene's keyframe. Agents that
     want a smarter classifier can post-process or overwrite the result,
@@ -252,7 +275,7 @@ def plan_layout(
 ) -> dict[str, Any]:
     """Return the ffmpeg filter_complex fragment for one layout.
 
-    This is the pure, deterministic function underpinning the 3 thrusters.
+    This is the pure, deterministic function underpinning the 5 thrusters.
     No rendering is performed. Useful for agents that want to preview the
     filtergraph or compose it with their own ffmpeg invocation.
     """

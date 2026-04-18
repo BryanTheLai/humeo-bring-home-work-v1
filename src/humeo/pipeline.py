@@ -10,7 +10,7 @@ from humeo_mcp.schemas import LayoutInstruction, LayoutKind, Scene
 from humeo.clip_selection_cache import cache_valid, load_meta, transcript_fingerprint, write_artifacts
 from humeo.clip_selector import load_clips, save_clips, select_clips
 from humeo.config import PipelineConfig
-from humeo.cutter import generate_srt
+from humeo.cutter import generate_ass
 from humeo.ingest import download_video, extract_audio, transcribe_whisperx
 from humeo.layout_vision import run_layout_vision_stage
 from humeo.render_window import clip_for_render
@@ -169,19 +169,38 @@ def run_pipeline(config: PipelineConfig) -> list[Path]:
             instr = LayoutInstruction(clip_id=clip.clip_id, layout=hint)
         clip.layout = instr.layout
         rclip = clip_for_render(clip)
-        srt_path = generate_srt(rclip, transcript, subtitles_dir)
+        # ASS (not SRT) so the caption file's PlayResY matches the output
+        # resolution and libass' font/margin scaling is 1:1.
+        subtitle_path = generate_ass(
+            rclip,
+            transcript,
+            subtitles_dir,
+            max_words_per_cue=config.subtitle_max_words_per_cue,
+            max_cue_sec=config.subtitle_max_cue_sec,
+            play_res_x=1080,
+            play_res_y=1920,
+            font_size=config.subtitle_font_size,
+            margin_v=config.subtitle_margin_v,
+        )
         final_path = config.output_dir / f"short_{clip.clip_id}.mp4"
-        if final_path.exists():
+        if final_path.exists() and not config.overwrite_outputs:
             logger.info("Clip %s already rendered, skipping.", clip.clip_id)
             final_outputs.append(final_path)
             continue
+        if final_path.exists() and config.overwrite_outputs:
+            logger.info("Clip %s exists; overwriting due to clean-run settings.", clip.clip_id)
 
+        # Font size and margin are already baked into the ASS file at
+        # PlayResY=1920, so the compile primitive does not need to override
+        # them -- but it still does, harmlessly, for single-source overrides.
         reframe_clip_ffmpeg(
             input_path=source_video,
             output_path=final_path,
             clip=rclip,
             layout_instruction=instr,
-            subtitle_path=srt_path,
+            subtitle_path=subtitle_path,
+            subtitle_font_size=config.subtitle_font_size,
+            subtitle_margin_v=config.subtitle_margin_v,
             title_text=clip.suggested_overlay_title,
         )
         final_outputs.append(final_path)

@@ -22,7 +22,7 @@ def test_trim_only():
     assert hi == 127.0
 
 
-def test_hook_intersects_trim():
+def test_hook_does_not_shorten_export_window():
     c = _clip(
         trim_start_sec=0.0,
         trim_end_sec=0.0,
@@ -30,8 +30,8 @@ def test_hook_intersects_trim():
         hook_end_sec=8.0,
     )
     lo, hi = effective_export_bounds(c)
-    assert lo == 102.0
-    assert hi == 108.0
+    assert lo == 100.0
+    assert hi == 130.0
 
 
 def test_clip_for_render_clears_timing_fields():
@@ -42,7 +42,7 @@ def test_clip_for_render_clears_timing_fields():
         hook_end_sec=10.0,
     )
     r = clip_for_render(c)
-    assert r.start_time_sec == 102.0
-    assert r.end_time_sec == 110.0
+    assert r.start_time_sec == 100.0
+    assert r.end_time_sec == 130.0
     assert r.trim_start_sec == 0.0
     assert r.hook_start_sec is None

@@ -49,6 +49,20 @@ class PipelineConfig:
     force_clip_selection: bool = False
     # When True, always re-run Gemini vision for layouts (ignore layout_vision.meta.json).
     force_layout_vision: bool = False
+    # When True, use an isolated work dir and force all stages to recompute.
+    clean_run: bool = False
+    # When True, render stage overwrites existing output files.
+    overwrite_outputs: bool = False
+
+    # Subtitle rendering / cue shaping.
+    # Values are in **output pixels** for a 1080x1920 short: libass is pinned to
+    # the output resolution via ``original_size``, so ``FontSize`` and ``MarginV``
+    # mean what they say. 48px font with a 160px bottom margin lands the caption
+    # in the lower third with a readable-but-not-shouting size.
+    subtitle_font_size: int = 48
+    subtitle_margin_v: int = 160
+    subtitle_max_words_per_cue: int = 4
+    subtitle_max_cue_sec: float = 2.2
 
     def __post_init__(self):
         self.output_dir = Path(self.output_dir)

@@ -82,10 +82,17 @@ def _fallback_even_words(clip: Clip) -> list[TranscriptWord]:
     return out
 
 
-def clip_words_to_srt_lines(words: list[TranscriptWord]) -> list[tuple[float, float, str]]:
+def clip_words_to_srt_lines(
+    words: list[TranscriptWord],
+    *,
+    max_words_per_cue: int = _MAX_WORDS_PER_CUE,
+    max_cue_sec: float = _MAX_CUE_SEC,
+) -> list[tuple[float, float, str]]:
     """Group words into SRT cues: max N words and max duration per cue."""
     if not words:
         return []
+    max_words_per_cue = max(1, int(max_words_per_cue))
+    max_cue_sec = max(0.2, float(max_cue_sec))
     lines: list[tuple[float, float, str]] = []
     i = 0
     n = len(words)
@@ -96,9 +103,9 @@ def clip_words_to_srt_lines(words: list[TranscriptWord]) -> list[tuple[float, fl
         j = i + 1
         while j < n:
             w = words[j]
-            if len(chunk) >= _MAX_WORDS_PER_CUE:
+            if len(chunk) >= max_words_per_cue:
                 break
-            if w.start_time - t0 > _MAX_CUE_SEC:
+            if w.start_time - t0 > max_cue_sec:
                 break
             chunk.append(w)
             end_t = w.end_time
@@ -126,3 +133,84 @@ def _fmt_time(seconds: float) -> str:
     if millis >= 1000:
         millis = 999
     return f"{hours:02d}:{minutes:02d}:{secs:02d},{millis:03d}"
+
+
+# ---------------------------------------------------------------------------
+# ASS / SubStation Alpha output (the format libass natively renders)
+# ---------------------------------------------------------------------------
+
+
+def _fmt_ass_time(seconds: float) -> str:
+    """ASS time format: ``H:MM:SS.cs`` (centiseconds)."""
+    seconds = max(0.0, seconds)
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = seconds % 60
+    whole = int(secs)
+    cs = int(round((secs - whole) * 100))
+    if cs >= 100:
+        cs = 99
+    return f"{hours:d}:{minutes:02d}:{whole:02d}.{cs:02d}"
+
+
+def _escape_ass_text(text: str) -> str:
+    """Escape characters that are significant to the ASS dialogue parser."""
+    return (
+        text.replace("\\", r"\\")
+        .replace("{", r"\{")
+        .replace("}", r"\}")
+        .replace("\n", r"\N")
+    )
+
+
+def format_ass(
+    lines: list[tuple[float, float, str]],
+    *,
+    play_res_x: int,
+    play_res_y: int,
+    font_size: int,
+    margin_v: int,
+    margin_h: int = 60,
+    font_name: str = "Arial",
+) -> str:
+    """Render captions as an ASS script whose PlayRes matches the output video.
+
+    Why this exists: libass' font/margin scaling multiplies every pixel-ish
+    value by ``video_height / PlayResY``. The default ``PlayResY=288`` blew
+    ``FontSize=48`` up to ~320 output pixels and pushed ``MarginV`` to the
+    middle of the frame. Pinning ``PlayResY`` to the actual output height
+    makes that scale factor exactly 1.0, so ``font_size`` and ``margin_v``
+    below are honest output pixel values.
+    """
+
+    header = (
+        "[Script Info]\n"
+        "ScriptType: v4.00+\n"
+        f"PlayResX: {play_res_x}\n"
+        f"PlayResY: {play_res_y}\n"
+        "WrapStyle: 0\n"
+        "ScaledBorderAndShadow: yes\n"
+        "YCbCr Matrix: None\n"
+        "\n"
+        "[V4+ Styles]\n"
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+        "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+        "Alignment, MarginL, MarginR, MarginV, Encoding\n"
+        # Bold=-1, Italic=0, ScaleX/Y=100, BorderStyle=4 (opaque box),
+        # Outline=0, Shadow=0, Alignment=2 (bottom-center).
+        f"Style: Default,{font_name},{font_size},&H00FFFFFF,&H000000FF,"
+        f"&H00000000,&H70000000,-1,0,0,0,100,100,0,0,4,0,0,2,"
+        f"{margin_h},{margin_h},{margin_v},0\n"
+        "\n"
+        "[Events]\n"
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+    )
+
+    events = []
+    for start, end, text in lines:
+        events.append(
+            f"Dialogue: 0,{_fmt_ass_time(start)},{_fmt_ass_time(end)},Default,,"
+            f"0,0,0,,{_escape_ass_text(text)}"
+        )
+    return header + "\n".join(events) + ("\n" if events else "")

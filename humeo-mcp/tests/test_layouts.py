@@ -1,10 +1,16 @@
+import re
 
 from humeo_mcp.primitives.layouts import (
     _center_crop_to_9x16,
     _crop_box,
     plan_layout,
 )
-from humeo_mcp.schemas import FocusStackOrder, LayoutInstruction, LayoutKind
+from humeo_mcp.schemas import (
+    BoundingBox,
+    FocusStackOrder,
+    LayoutInstruction,
+    LayoutKind,
+)
 
 
 def test_crop_box_aspect_exact():
@@ -77,14 +83,37 @@ def test_split_layout_person_crop_is_right_third():
 
 
 def test_split_layout_can_swap_stack_order():
-    instr = LayoutInstruction(
-        clip_id="c",
-        layout=LayoutKind.SPLIT_CHART_PERSON,
-        person_x_norm=0.83,
-        focus_stack_order=FocusStackOrder.PERSON_THEN_CHART,
-    )
-    fg = plan_layout(instr, out_w=1080, out_h=1920).filtergraph
-    assert "[ptop]" in fg and "[cbot]" in fg and "vstack=inputs=2" in fg
+    """PERSON_THEN_CHART puts the right-strip (person) crop into the top band."""
+    chart_first = plan_layout(
+        LayoutInstruction(
+            clip_id="c",
+            layout=LayoutKind.SPLIT_CHART_PERSON,
+            focus_stack_order=FocusStackOrder.CHART_THEN_PERSON,
+        ),
+        out_w=1080,
+        out_h=1920,
+    ).filtergraph
+    person_first = plan_layout(
+        LayoutInstruction(
+            clip_id="c",
+            layout=LayoutKind.SPLIT_CHART_PERSON,
+            focus_stack_order=FocusStackOrder.PERSON_THEN_CHART,
+        ),
+        out_w=1080,
+        out_h=1920,
+    ).filtergraph
+
+    def top_crop(fg: str) -> str:
+        m = re.search(r"\[src1\]crop=(\d+:\d+:\d+:\d+)", fg)
+        assert m is not None, fg
+        return m.group(1)
+
+    # chart strip = left 1280px of source (2/3 split seam).
+    assert top_crop(chart_first) == "1280:1080:0:0"
+    # person strip = right 640px -> x=1280.
+    assert top_crop(person_first) == "640:1080:1280:0"
+    assert "vstack=inputs=2" in chart_first
+    assert "vstack=inputs=2" in person_first
 
 
 def test_split_layout_person_clamped():
@@ -101,6 +130,114 @@ def test_plan_layout_dispatch_covers_all_kinds():
         plan = plan_layout(instr)
         assert plan.out_label == "vout"
         assert plan.filtergraph.endswith("[vout]")
+
+
+def test_default_split_is_even_50_50_bands():
+    """The user-requested symmetric look: top and bottom bands are equal."""
+    instr = LayoutInstruction(clip_id="c", layout=LayoutKind.SPLIT_CHART_PERSON)
+    fg = plan_layout(instr, out_w=1080, out_h=1920).filtergraph
+    # Each strip should scale to the same height (half of 1920).
+    heights = re.findall(r"scale=1080:(\d+):force_original_aspect_ratio", fg)
+    assert len(heights) == 2
+    assert heights[0] == heights[1] == "960", f"expected even 960/960, got {heights}"
+
+
+def test_top_band_ratio_honored_for_uneven_splits():
+    instr = LayoutInstruction(
+        clip_id="c", layout=LayoutKind.SPLIT_CHART_PERSON, top_band_ratio=0.6
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920).filtergraph
+    heights = re.findall(r"scale=1080:(\d+):force_original_aspect_ratio", fg)
+    assert heights == ["1152", "768"], heights
+
+
+def test_split_seam_is_midpoint_between_bboxes():
+    """When both bboxes are provided, strips partition the source -- no overlap, no gap."""
+    instr = LayoutInstruction(
+        clip_id="c",
+        layout=LayoutKind.SPLIT_CHART_PERSON,
+        split_chart_region=BoundingBox(x1=0.0, y1=0.0, x2=0.50, y2=1.0),
+        split_person_region=BoundingBox(x1=0.55, y1=0.0, x2=1.0, y2=1.0),
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    # chart.x2 = 960px, person.x1 = 1056px -> midpoint = 1008 -> even -> 1008.
+    # Chart strip: x=0, cw=1008. Person strip: x=1008, cw=912.
+    top_crop = re.search(r"\[src1\]crop=(\d+:\d+:\d+:\d+)", fg).group(1)
+    bot_crop = re.search(r"\[src2\]crop=(\d+:\d+:\d+:\d+)", fg).group(1)
+    assert top_crop == "1008:1080:0:0"
+    assert bot_crop == "912:1080:1008:0"
+
+
+def test_split_uses_bbox_y_for_tight_band_fill():
+    """bbox y1/y2 constrains vertical crop so the chart fills its band."""
+    instr = LayoutInstruction(
+        clip_id="c",
+        layout=LayoutKind.SPLIT_CHART_PERSON,
+        split_chart_region=BoundingBox(x1=0.0, y1=0.1, x2=0.5, y2=0.7),
+        split_person_region=BoundingBox(x1=0.55, y1=0.0, x2=1.0, y2=1.0),
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    # Chart bbox y: 0.1..0.7 -> y=108 -> even=108, ch=0.6*1080=648.
+    assert "crop=1008:648:0:108" in fg
+
+
+def test_split_minimum_strip_width_enforced():
+    """If chart/person bboxes are pathological (seam at edge), don't starve a strip."""
+    instr = LayoutInstruction(
+        clip_id="c",
+        layout=LayoutKind.SPLIT_CHART_PERSON,
+        split_chart_region=BoundingBox(x1=0.0, y1=0.0, x2=0.05, y2=1.0),
+        split_person_region=BoundingBox(x1=0.05, y1=0.0, x2=1.0, y2=1.0),
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    widths = [int(m) for m in re.findall(r"crop=(\d+):\d+:\d+:\d+", fg)]
+    # Min strip = 20% of 1920 = 384 px. Neither strip should be narrower.
+    assert all(w >= 384 for w in widths), widths
+
+
+def test_split_two_persons_stacks_two_crops():
+    instr = LayoutInstruction(
+        clip_id="c",
+        layout=LayoutKind.SPLIT_TWO_PERSONS,
+        split_person_region=BoundingBox(x1=0.0, y1=0.05, x2=0.5, y2=0.95),
+        split_second_person_region=BoundingBox(x1=0.5, y1=0.05, x2=1.0, y2=0.95),
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    assert "split=2" in fg and "vstack=inputs=2" in fg
+    # Seam at x=960. bbox y: 0.05..0.95 -> y=54, ch=972 (even).
+    assert "[src1]crop=960:972:0:54" in fg
+    assert "[src2]crop=960:972:960:54" in fg
+
+
+def test_split_two_charts_stacks_two_crops():
+    instr = LayoutInstruction(
+        clip_id="c",
+        layout=LayoutKind.SPLIT_TWO_CHARTS,
+        split_chart_region=BoundingBox(x1=0.0, y1=0.0, x2=0.5, y2=1.0),
+        split_second_chart_region=BoundingBox(x1=0.5, y1=0.0, x2=1.0, y2=1.0),
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    assert "split=2" in fg and "vstack=inputs=2" in fg
+    assert "[src1]crop=960:1080:0:0" in fg
+    assert "[src2]crop=960:1080:960:0" in fg
+
+
+def test_split_two_persons_without_bboxes_defaults_to_centered():
+    """No bboxes -> centered 50/50 seam, full source height fallback."""
+    instr = LayoutInstruction(
+        clip_id="c", layout=LayoutKind.SPLIT_TWO_PERSONS
+    )
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    assert "[src1]crop=960:1080:0:0" in fg
+    assert "[src2]crop=960:1080:960:0" in fg
+
+
+def test_split_bands_use_cover_scale_plus_center_crop():
+    """Each band is painted edge-to-edge -- no letterbox bars."""
+    instr = LayoutInstruction(clip_id="c", layout=LayoutKind.SPLIT_CHART_PERSON)
+    fg = plan_layout(instr, out_w=1080, out_h=1920, src_w=1920, src_h=1080).filtergraph
+    assert fg.count("force_original_aspect_ratio=increase") == 2
+    assert fg.count("setsar=1") == 2
 
 
 def test_zoom_tighter_means_smaller_crop_window():

@@ -18,7 +18,7 @@
 
 ```
 → humeo.list_layouts()
-    # discover the 3 layouts
+    # discover the 5 layouts (max 2 on-screen items per short)
 
 → humeo.ingest(source_path="/abs/long.mp4", work_dir="/abs/work", with_transcript=true)
     # IngestResult: scenes[], keyframes, transcript_words[]
@@ -51,17 +51,38 @@ rm-rf your disk or burn GPU hours.
 
 ## 4. Override knobs
 
-`LayoutInstruction` accepts `zoom`, `person_x_norm`, `chart_x_norm`.
-An agent (or a human via the CLI) can override the defaults per-clip
-without touching any code. Example:
+`LayoutInstruction` accepts:
+
+- `zoom`, `person_x_norm`, `chart_x_norm` — single-subject knobs.
+- `split_chart_region`, `split_person_region`,
+  `split_second_chart_region`, `split_second_person_region` —
+  normalized bboxes that drive split-layout cropping.
+- `top_band_ratio` — fraction of output height used by the top band
+  (default 0.5 = even 50/50, the symmetric look).
+- `focus_stack_order` — for `split_chart_person`, chart-on-top vs
+  person-on-top.
+
+Example: chart + person with a precise bbox crop and an even split.
 
 ```json
 {
   "clip_id": "001",
   "layout": "split_chart_person",
-  "zoom": 1.0,
-  "person_x_norm": 0.83,
-  "chart_x_norm": 0.02
+  "split_chart_region":  {"x1": 0.00, "y1": 0.10, "x2": 0.52, "y2": 0.95},
+  "split_person_region": {"x1": 0.55, "y1": 0.05, "x2": 1.00, "y2": 1.00},
+  "top_band_ratio": 0.5,
+  "focus_stack_order": "chart_then_person"
+}
+```
+
+Example: two-speaker interview.
+
+```json
+{
+  "clip_id": "002",
+  "layout": "split_two_persons",
+  "split_person_region":        {"x1": 0.02, "y1": 0.05, "x2": 0.48, "y2": 0.95},
+  "split_second_person_region": {"x1": 0.52, "y1": 0.05, "x2": 0.98, "y2": 0.95}
 }
 ```
 

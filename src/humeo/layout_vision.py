@@ -31,23 +31,35 @@ LAYOUT_VISION_JSON = "layout_vision.json"
 
 GEMINI_LAYOUT_VISION_PROMPT = """You are framing a vertical short (9:16) from a 16:9 video frame.
 
+HARD RULE: the final short shows AT MOST TWO on-screen items. An "item" is one
+of person (a human speaker) or chart (slide, graph, data visual, screenshare).
+That gives exactly five layouts to choose from.
+
 Return ONLY a JSON object with this exact shape:
 {
-  "layout": "sit_center" | "zoom_call_center" | "split_chart_person",
-  "person_bbox": {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
-  "chart_bbox": {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
+  "layout": "zoom_call_center" | "sit_center" | "split_chart_person" | "split_two_persons" | "split_two_charts",
+  "person_bbox":        {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
+  "chart_bbox":         {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
+  "second_person_bbox": {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
+  "second_chart_bbox":  {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
   "reason": "short rationale"
 }
 
-Rules:
+Bbox rules:
 - All bbox coordinates are normalized 0..1 (left/top = 0, right/bottom = 1). Require x2 > x1 and y2 > y1 when a bbox is non-null.
-- person_bbox: tight box around the main speaker's head/upper body if visible; null if not visible.
-- chart_bbox: slide, chart, graph, or large on-screen graphic; null if none.
-- layout:
-  - split_chart_person: chart/slide beside or overlapping a visible speaker (webinar / explainer). Prefer this when BOTH person_bbox and chart_bbox are non-null and they occupy distinct regions.
-  - zoom_call_center: single tight webcam / video-call headshot filling much of the frame.
-  - sit_center: single subject, interview framing, or when unsure.
-- No markdown. JSON only."""
+- person_bbox / second_person_bbox: tight box around each speaker's head AND upper body. If two speakers are visible, ``person_bbox`` is the LEFT speaker and ``second_person_bbox`` is the RIGHT speaker (by x-center).
+- chart_bbox / second_chart_bbox: slide, chart, graph, or large on-screen graphic. If two charts are visible, ``chart_bbox`` is the LEFT chart and ``second_chart_bbox`` is the RIGHT chart.
+- The two bboxes of the same kind must not overlap meaningfully; they should partition the source frame into distinct regions.
+
+Layout selection (pick exactly one):
+- zoom_call_center: ONE person, tight webcam / video-call headshot filling much of the frame. person_bbox set; others null.
+- sit_center: ONE person, interview / seated framing, or when unsure. person_bbox set; others null.
+- split_chart_person: ONE chart + ONE person in distinct regions (webinar / explainer). Both person_bbox and chart_bbox set; second_* null.
+- split_two_persons: TWO visible speakers (interview two-up, podcast panel). person_bbox AND second_person_bbox set; chart bboxes null.
+- split_two_charts: TWO charts / slides side-by-side. chart_bbox AND second_chart_bbox set; person bboxes null.
+
+When in doubt prefer ``sit_center``. Never output more than two of {person, chart} items in total.
+No markdown. JSON only."""
 
 
 def _clips_fingerprint(clips_path: Path) -> str:
@@ -126,22 +138,62 @@ def _parse_bbox(raw: object) -> BoundingBox | None:
 def _instruction_from_gemini_json(
     scene_id: str, data: dict[str, Any]
 ) -> LayoutInstruction:
+    """Translate Gemini's JSON into a validated :class:`LayoutInstruction`.
+
+    Falls back to ``sit_center`` whenever the LLM returns something the
+    contract doesn't support, so a bad vision call can never crash the
+    pipeline. Also downgrades "two-item" layouts when the second bbox is
+    missing -- e.g. ``split_two_persons`` with only one person_bbox drops
+    to ``sit_center`` rather than rendering a silently-broken split.
+    """
+
     layout_str = str(data.get("layout", "sit_center")).strip()
     try:
         kind = LayoutKind(layout_str)
     except ValueError:
         kind = LayoutKind.SIT_CENTER
+
     pb = _parse_bbox(data.get("person_bbox"))
     cb = _parse_bbox(data.get("chart_bbox"))
+    p2 = _parse_bbox(data.get("second_person_bbox"))
+    c2 = _parse_bbox(data.get("second_chart_bbox"))
     reason = str(data.get("reason", ""))[:400]
 
-    regions = SceneRegions(scene_id=scene_id, person_bbox=pb, chart_bbox=cb, raw_reason=reason)
+    # Downgrade any split that is missing its required bboxes, so we never
+    # emit a split layout that will render as garbage.
+    if kind == LayoutKind.SPLIT_CHART_PERSON and (pb is None or cb is None):
+        kind = LayoutKind.SIT_CENTER if pb is not None else LayoutKind.SIT_CENTER
+    if kind == LayoutKind.SPLIT_TWO_PERSONS and (pb is None or p2 is None):
+        kind = LayoutKind.SIT_CENTER
+    if kind == LayoutKind.SPLIT_TWO_CHARTS and (cb is None or c2 is None):
+        kind = LayoutKind.SIT_CENTER
+
+    regions = SceneRegions(
+        scene_id=scene_id, person_bbox=pb, chart_bbox=cb, raw_reason=reason
+    )
     classification = SceneClassification(
         scene_id=scene_id, layout=kind, confidence=1.0, reason=reason
     )
-    instr = layout_instruction_from_regions(regions, classification, clip_id=scene_id)
+    instr = layout_instruction_from_regions(
+        regions, classification, clip_id=scene_id
+    )
+
+    updates: dict[str, Any] = {}
     if kind == LayoutKind.SPLIT_CHART_PERSON and pb is not None and cb is not None:
-        instr = instr.model_copy(update={"split_chart_region": cb, "split_person_region": pb})
+        updates["split_chart_region"] = cb
+        updates["split_person_region"] = pb
+    elif kind == LayoutKind.SPLIT_TWO_PERSONS and pb is not None and p2 is not None:
+        # Order by x-center so ``split_person_region`` is always the LEFT speaker.
+        left, right = sorted((pb, p2), key=lambda b: b.center_x)
+        updates["split_person_region"] = left
+        updates["split_second_person_region"] = right
+    elif kind == LayoutKind.SPLIT_TWO_CHARTS and cb is not None and c2 is not None:
+        left, right = sorted((cb, c2), key=lambda b: b.center_x)
+        updates["split_chart_region"] = left
+        updates["split_second_chart_region"] = right
+
+    if updates:
+        instr = instr.model_copy(update=updates)
     return instr
 
 

@@ -1,10 +1,13 @@
-"""Scene classifier: assigns one of 3 layouts to each scene.
+"""Scene classifier: assigns one of the 5 layouts to each scene.
 
 Two backends share the same contract:
 
 * ``classify_scenes_heuristic`` — no model call. Uses keyframe pixel analysis
   (edge density + color variance + face-rectangle heuristic-free approach)
-  to guess which of the 3 layouts fits best. Fully offline, deterministic.
+  to guess which of the 5 layouts fits best. Fully offline, deterministic.
+  Note: the heuristic only picks between ``SIT_CENTER`` / ``ZOOM_CALL_CENTER`` /
+  ``SPLIT_CHART_PERSON``; the two-of-a-kind splits (``SPLIT_TWO_PERSONS`` /
+  ``SPLIT_TWO_CHARTS``) are only selectable by the vision-LLM backend.
 * ``classify_scenes_with_llm`` — pluggable LLM hook. Takes a callable
   ``(image_path, prompt) -> str`` so the caller (MCP client or test) can
   wire up whatever multimodal model they want. Enforces strict JSON output.

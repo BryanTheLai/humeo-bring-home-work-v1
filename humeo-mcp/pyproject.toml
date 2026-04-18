@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "humeo-mcp"
 version = "0.1.0"
-description = "Reusable-rocket MCP server for long-video-to-shorts editing. Deterministic primitives + 3 fixed 9:16 layouts."
+description = "Reusable-rocket MCP server for long-video-to-shorts editing. Deterministic primitives + 5 fixed 9:16 layouts."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

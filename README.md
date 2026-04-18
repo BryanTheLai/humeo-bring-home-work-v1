@@ -9,6 +9,22 @@ Bluntly:
 
 If you are confused by the two folders, that is the difference. One is the app. One is the engine.
 
+## One rule, five layouts
+
+A short shows at most **two on-screen items**, where an item is a
+`person` or a `chart`. That gives exactly five layouts (the "thrusters"):
+
+| Layout                | Items              |
+| --------------------- | ------------------ |
+| `zoom_call_center`    | 1 person           |
+| `sit_center`          | 1 person           |
+| `split_chart_person`  | 1 chart + 1 person |
+| `split_two_persons`   | 2 persons          |
+| `split_two_charts`    | 2 charts           |
+
+See [`TERMINOLOGY.md`](TERMINOLOGY.md) for the full glossary of every
+term used in code and docs (subject, crop, band, seam, bbox, etc.).
+
 ## What you actually need
 
 For normal use:

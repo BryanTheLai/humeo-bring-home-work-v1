@@ -34,6 +34,8 @@ def reframe_clip_ffmpeg(
     zoom: float = 1.0,
     layout_instruction: LayoutInstruction | None = None,
     subtitle_path: Path | str | None = None,
+    subtitle_font_size: int = 48,
+    subtitle_margin_v: int = 160,
     title_text: str = "",
     dry_run: bool = False,
 ) -> RenderRequest:
@@ -51,6 +53,8 @@ def reframe_clip_ffmpeg(
         layout=instr,
         output_path=str(output_path),
         subtitle_path=str(subtitle_path) if subtitle_path else None,
+        subtitle_font_size=subtitle_font_size,
+        subtitle_margin_v=subtitle_margin_v,
         title_text=title_text,
         mode="dry_run" if dry_run else "normal",
     )
