@@ -3,7 +3,7 @@
 Long podcast or interview → vertical 9:16 shorts. Pipeline: download, transcribe, Gemini (clip selection, hook detection, content pruning, layout vision), ffmpeg render.
 
 **Architecture (static HTML, GitHub Pages):**  
-[https://bryanthelai.github.io/humeo-bring-home-work-v1/hive_architecture_visualization.html](https://bryanthelai.github.io/humeo-bring-home-work-v1/hive_architecture_visualization.html)
+[https://bryanthelai.github.io/long-to-shorts/hive_architecture_visualization.html](https://bryanthelai.github.io/long-to-shorts/hive_architecture_visualization.html)
 
 ## Repo layout
 

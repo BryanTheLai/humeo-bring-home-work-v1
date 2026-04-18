@@ -172,7 +172,7 @@ This is the **Comprehensive Caption** module (§3.1.5) specialized for layout, p
 ## 7. Architecture as it stands today
 
 ```
-humeo-bring-home-work-v1/
+long-to-shorts/
 ├── .gitignore                   ← new, repo-wide ignores
 ├── pyproject.toml               ← humeo package, now depends on humeo-core; pytest wired
 ├── tests/
