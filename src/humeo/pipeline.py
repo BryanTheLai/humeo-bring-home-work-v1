@@ -12,6 +12,7 @@ from humeo.clip_selector import load_clips, save_clips, select_clips
 from humeo.config import PipelineConfig
 from humeo.content_pruning import run_content_pruning_stage
 from humeo.cutter import generate_ass
+from humeo.hook_detector import run_hook_detection_stage
 from humeo.ingest import download_video, extract_audio, transcribe_whisperx
 from humeo.layout_vision import run_layout_vision_stage
 from humeo.render_window import clip_for_render
@@ -112,7 +113,14 @@ def run_pipeline(config: PipelineConfig) -> list[Path]:
         clips = load_clips(clips_path)
         logger.info("Clip selection cache hit (transcript + provider/model unchanged); skipping LLM.")
     else:
-        clips, raw = select_clips(transcript, gemini_model=config.gemini_model)
+        clips, raw = select_clips(
+            transcript,
+            gemini_model=config.gemini_model,
+            candidate_count=config.clip_selection_candidate_count,
+            quality_threshold=config.clip_selection_quality_threshold,
+            min_kept=config.clip_selection_min_kept,
+            max_kept=config.clip_selection_max_kept,
+        )
         save_clips(clips, clips_path)
         write_artifacts(
             config.work_dir,
@@ -132,6 +140,22 @@ def run_pipeline(config: PipelineConfig) -> list[Path]:
             clip.virality_score,
             clip.topic,
         )
+
+    # ------------------------------------------------------------------
+    # Stage 2.25: Hook Detection
+    # ------------------------------------------------------------------
+    # The clip selector is unreliable at localising the hook sentence and
+    # tends to return the 0.0-3.0s placeholder verbatim, which would disable
+    # start-trim in Stage 2.5. This stage asks Gemini to localise the real
+    # hook per clip so Stage 2.5 can clamp against a real window.
+    logger.info("--- STAGE 2.25: HOOK DETECTION (enabled=%s) ---", config.detect_hooks)
+    clips = run_hook_detection_stage(
+        config.work_dir,
+        clips,
+        transcript,
+        transcript_fp=fp,
+        config=config,
+    )
 
     # ------------------------------------------------------------------
     # Stage 2.5: Content Pruning (HIVE-style inner-clip tightening)

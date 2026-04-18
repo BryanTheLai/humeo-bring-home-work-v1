@@ -1,0 +1,626 @@
+(base) (humeo-bring-home-work-v1) PS C:\Users\wbrya\OneDrive\Documents\GitHub\humeo-bring-home-work-v1> humeo --long-to-shorts "https://www.youtube.com/watch?v=PdVv_vLkUgk" --clean-run --verbose
+17:02:52 | INFO    | humeo.pipeline | ============================================================
+17:02:52 | INFO    | humeo.pipeline | HUMEO PIPELINE START
+17:02:52 | INFO    | humeo.pipeline | URL: https://www.youtube.com/watch?v=PdVv_vLkUgk
+17:02:52 | INFO    | humeo.pipeline | Output: output
+17:02:52 | INFO    | humeo.pipeline | ============================================================
+17:02:52 | INFO    | humeo.pipeline | --- STAGE 1: INGESTION ---
+17:02:52 | INFO    | humeo.ingest | Downloading video: https://www.youtube.com/watch?v=PdVv_vLkUgk
+17:03:28 | WARNING | humeo.ingest | WARNING: [youtube] No supported JavaScript runtime could be found. Only deno is enabled by default; to use another runtime add  --js-runtimes RUNTIME[:PATH]  to your command/config. YouTube extraction without a JS runtime has been deprecated, and some formats may be missing. See  https://github.com/yt-dlp/yt-dlp/wiki/EJS  for details on installing one
+17:03:28 | INFO    | humeo.ingest | Downloaded to: .humeo_work_clean_20260418_170252\source.mp4
+17:03:28 | INFO    | humeo.ingest | Extracting audio to: .humeo_work_clean_20260418_170252\source_audio.wav
+17:03:30 | INFO    | humeo.ingest | Transcribing with OpenAI Whisper API (HUMEO_TRANSCRIBE_PROVIDER=openai).
+17:03:31 | INFO    | humeo.ingest | Audio exceeds OpenAI upload limit; transcribing in 5 chunks.
+17:03:31 | INFO    | humeo.ingest | Transcribing chunk 1/5 (0.0s-556.5s)
+17:03:31 | DEBUG   | openai._base_client | Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='.humeo_work_clean_20260418_170252\\openai_transcribe\\source_audio_part_001.wav'>)))], 'idempotency_key': 'stainless-python-retry-488646e2-37fa-464e-a716-ad7e7d8a07ad', 'content': None, 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json', 'timestamp_granularities': ['word', 'segment']}}
+17:03:32 | DEBUG   | openai._base_client | Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+17:03:32 | DEBUG   | httpcore.connection | connect_tcp.started host='api.openai.com' port=443 local_address=None timeout=5.0 socket_options=None
+17:03:32 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405684350>
+17:03:32 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x00000194041F2F50> server_hostname='api.openai.com' timeout=5.0
+17:03:32 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000194055F5550>
+17:03:32 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:03:32 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:03:32 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:03:32 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:03:32 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:03:57 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Sat, 18 Apr 2026 09:03:57 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'access-control-expose-headers', b'X-Request-ID'), (b'openai-organization', b'user-f5wll5obbmjmgmioddupghlw'), (b'openai-processing-ms', b'20731'), (b'openai-project', b'proj_HHY4uLj8PI2L0t0VdgbABb8k'), (b'openai-version', b'2020-10-01'), (b'Server', b'cloudflare'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains; preload'), (b'via', b'envoy-router-canary-757d494d96-kqqzp'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-request-id', b'req_c50c49a2f8e5438ba2fb2c2fabb9d5c7'), (b'x-openai-proxy-wasm', b'v0.1'), (b'cf-cache-status', b'DYNAMIC'), (b'set-cookie', b'__cf_bm=Tdzb7BPFx0QTG3etUwGpIG9N4ZnTcmcHq9ZgbVpzCAM-1776503012.1445942-1.0.1.1-KmXBgSHZv9Zp4qjmZueTvzGO0NgIvcJUUOIphOUU9xlW0EeKvkMbAWgrN5ENXqsKVfwmYFfqj8ll3F1g1D5uTUHUyt74GeY6FiA80FKinMPAP8AFLEbJVrJmt1Jyt9fH; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026 09:33:57 GMT'), (b'X-Content-Type-Options', b'nosniff'), (b'Content-Encoding', b'gzip'), (b'CF-RAY', b'9ee27f31eca7b68d-KUL'), (b'alt-svc', b'h3=":443"; ma=86400')])
+17:03:57 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:03:58 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:03:58 | DEBUG   | httpcore.http11 | response_closed.started
+17:03:58 | DEBUG   | httpcore.http11 | response_closed.complete
+17:03:58 | DEBUG   | openai._base_client | HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "200 OK" Headers({'date': 'Sat, 18 Apr 2026 09:03:57 GMT', 'content-type': 'application/json', 'transfer-encoding': 'chunked', 'connection': 'keep-alive', 'access-control-expose-headers': 'X-Request-ID', 'openai-organization': 'user-f5wll5obbmjmgmioddupghlw', 'openai-processing-ms': '20731', 'openai-project': 'proj_HHY4uLj8PI2L0t0VdgbABb8k', 'openai-version': '2020-10-01', 'server': 'cloudflare', 'strict-transport-security': 'max-age=31536000; includeSubDomains; preload', 'via': 'envoy-router-canary-757d494d96-kqqzp', 'x-ratelimit-limit-requests': '500', 'x-ratelimit-remaining-requests': '499', 'x-ratelimit-reset-requests': '120ms', 'x-request-id': 'req_c50c49a2f8e5438ba2fb2c2fabb9d5c7', 'x-openai-proxy-wasm': 'v0.1', 'cf-cache-status': 'DYNAMIC', 'set-cookie': '__cf_bm=Tdzb7BPFx0QTG3etUwGpIG9N4ZnTcmcHq9ZgbVpzCAM-1776503012.1445942-1.0.1.1-KmXBgSHZv9Zp4qjmZueTvzGO0NgIvcJUUOIphOUU9xlW0EeKvkMbAWgrN5ENXqsKVfwmYFfqj8ll3F1g1D5uTUHUyt74GeY6FiA80FKinMPAP8AFLEbJVrJmt1Jyt9fH; HttpOnly; Secure; Path=/; Domain=api.openai.com; Expires=Sat, 18 Apr 2026 09:33:57 GMT', 'x-content-type-options': 'nosniff', 'content-encoding': 'gzip', 'cf-ray': '9ee27f31eca7b68d-KUL', 'alt-svc': 'h3=":443"; ma=86400'})
+17:03:58 | DEBUG   | openai._base_client | request_id: req_c50c49a2f8e5438ba2fb2c2fabb9d5c7
+17:03:58 | INFO    | humeo.ingest | Transcribing chunk 2/5 (556.5s-1113.1s)
+17:03:58 | DEBUG   | openai._base_client | Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='.humeo_work_clean_20260418_170252\\openai_transcribe\\source_audio_part_002.wav'>)))], 'idempotency_key': 'stainless-python-retry-d1baf0c8-d829-4ecd-9bfd-58c0d21e1e80', 'content': None, 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json', 'timestamp_granularities': ['word', 'segment']}}
+17:03:58 | DEBUG   | openai._base_client | Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+17:03:58 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:03:58 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:03:58 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:03:59 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:03:59 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:04:19 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Sat, 18 Apr 2026 09:04:18 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'access-control-expose-headers', b'X-Request-ID'), (b'openai-organization', b'user-f5wll5obbmjmgmioddupghlw'), (b'openai-processing-ms', b'16376'), (b'openai-project', b'proj_HHY4uLj8PI2L0t0VdgbABb8k'), (b'openai-version', b'2020-10-01'), (b'Server', b'cloudflare'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains; preload'), (b'via', b'envoy-router-canary-85cbc6dbd6-qf62d'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-request-id', b'req_5f960890aaff4dcb956ae67b3c761643'), (b'x-openai-proxy-wasm', b'v0.1'), (b'cf-cache-status', b'DYNAMIC'), (b'X-Content-Type-Options', b'nosniff'), (b'Content-Encoding', b'gzip'), (b'CF-RAY', b'9ee27fd48cebb68d-KUL'), (b'alt-svc', b'h3=":443"; ma=86400')])
+17:04:19 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:04:19 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:04:19 | DEBUG   | httpcore.http11 | response_closed.started
+17:04:19 | DEBUG   | httpcore.http11 | response_closed.complete
+17:04:19 | DEBUG   | openai._base_client | HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "200 OK" Headers({'date': 'Sat, 18 Apr 2026 09:04:18 GMT', 'content-type': 'application/json', 'transfer-encoding': 'chunked', 'connection': 'keep-alive', 'access-control-expose-headers': 'X-Request-ID', 'openai-organization': 'user-f5wll5obbmjmgmioddupghlw', 'openai-processing-ms': '16376', 'openai-project': 'proj_HHY4uLj8PI2L0t0VdgbABb8k', 'openai-version': '2020-10-01', 'server': 'cloudflare', 'strict-transport-security': 'max-age=31536000; includeSubDomains; preload', 'via': 'envoy-router-canary-85cbc6dbd6-qf62d', 'x-ratelimit-limit-requests': '500', 'x-ratelimit-remaining-requests': '499', 'x-ratelimit-reset-requests': '120ms', 'x-request-id': 'req_5f960890aaff4dcb956ae67b3c761643', 'x-openai-proxy-wasm': 'v0.1', 'cf-cache-status': 'DYNAMIC', 'x-content-type-options': 'nosniff', 'content-encoding': 'gzip', 'cf-ray': '9ee27fd48cebb68d-KUL', 'alt-svc': 'h3=":443"; ma=86400'})
+17:04:19 | DEBUG   | openai._base_client | request_id: req_5f960890aaff4dcb956ae67b3c761643
+17:04:19 | INFO    | humeo.ingest | Transcribing chunk 3/5 (1113.1s-1669.6s)
+17:04:19 | DEBUG   | openai._base_client | Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='.humeo_work_clean_20260418_170252\\openai_transcribe\\source_audio_part_003.wav'>)))], 'idempotency_key': 'stainless-python-retry-caa21d78-0876-4949-a93b-a1c8a3af8641', 'content': None, 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json', 'timestamp_granularities': ['word', 'segment']}}
+17:04:19 | DEBUG   | openai._base_client | Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+17:04:19 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:04:19 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:04:19 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:04:20 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:04:20 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:04:40 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Sat, 18 Apr 2026 09:04:40 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'access-control-expose-headers', b'X-Request-ID'), (b'openai-organization', b'user-f5wll5obbmjmgmioddupghlw'), (b'openai-processing-ms', b'16250'), (b'openai-project', b'proj_HHY4uLj8PI2L0t0VdgbABb8k'), (b'openai-version', b'2020-10-01'), (b'Server', b'cloudflare'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains; preload'), (b'via', b'envoy-router-6f65c46f88-vdqcb'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-request-id', b'req_2ee78e9224cf471cb87a604db39045e3'), (b'x-openai-proxy-wasm', b'v0.1'), (b'cf-cache-status', b'DYNAMIC'), (b'X-Content-Type-Options', b'nosniff'), (b'Content-Encoding', b'gzip'), (b'CF-RAY', b'9ee28058fa5eb68d-KUL'), (b'alt-svc', b'h3=":443"; ma=86400')])
+17:04:40 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:04:41 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:04:41 | DEBUG   | httpcore.http11 | response_closed.started
+17:04:41 | DEBUG   | httpcore.http11 | response_closed.complete
+17:04:41 | DEBUG   | openai._base_client | HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "200 OK" Headers({'date': 'Sat, 18 Apr 2026 09:04:40 GMT', 'content-type': 'application/json', 'transfer-encoding': 'chunked', 'connection': 'keep-alive', 'access-control-expose-headers': 'X-Request-ID', 'openai-organization': 'user-f5wll5obbmjmgmioddupghlw', 'openai-processing-ms': '16250', 'openai-project': 'proj_HHY4uLj8PI2L0t0VdgbABb8k', 'openai-version': '2020-10-01', 'server': 'cloudflare', 'strict-transport-security': 'max-age=31536000; includeSubDomains; preload', 'via': 'envoy-router-6f65c46f88-vdqcb', 'x-ratelimit-limit-requests': '500', 'x-ratelimit-remaining-requests': '499', 'x-ratelimit-reset-requests': '120ms', 'x-request-id': 'req_2ee78e9224cf471cb87a604db39045e3', 'x-openai-proxy-wasm': 'v0.1', 'cf-cache-status': 'DYNAMIC', 'x-content-type-options': 'nosniff', 'content-encoding': 'gzip', 'cf-ray': '9ee28058fa5eb68d-KUL', 'alt-svc': 'h3=":443"; ma=86400'})
+17:04:41 | DEBUG   | openai._base_client | request_id: req_2ee78e9224cf471cb87a604db39045e3
+17:04:41 | INFO    | humeo.ingest | Transcribing chunk 4/5 (1669.6s-2226.2s)
+17:04:41 | DEBUG   | openai._base_client | Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='.humeo_work_clean_20260418_170252\\openai_transcribe\\source_audio_part_004.wav'>)))], 'idempotency_key': 'stainless-python-retry-de97fa19-0f65-4902-8678-c4959c885cb5', 'content': None, 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json', 'timestamp_granularities': ['word', 'segment']}}
+17:04:41 | DEBUG   | openai._base_client | Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+17:04:41 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:04:41 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:04:41 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:04:41 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:04:41 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:05:01 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Sat, 18 Apr 2026 09:05:01 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'access-control-expose-headers', b'X-Request-ID'), (b'openai-organization', b'user-f5wll5obbmjmgmioddupghlw'), (b'openai-processing-ms', b'15743'), (b'openai-project', b'proj_HHY4uLj8PI2L0t0VdgbABb8k'), (b'openai-version', b'2020-10-01'), (b'Server', b'cloudflare'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains; preload'), (b'via', b'envoy-router-6f65c46f88-5qvdd'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-request-id', b'req_c403dcc2e88440ea989b966b3be0a9a5'), (b'x-openai-proxy-wasm', b'v0.1'), (b'cf-cache-status', b'DYNAMIC'), (b'X-Content-Type-Options', b'nosniff'), (b'Content-Encoding', b'gzip'), (b'CF-RAY', b'9ee280e0d9e3b68d-KUL'), (b'alt-svc', b'h3=":443"; ma=86400')])
+17:05:01 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:05:01 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:05:01 | DEBUG   | httpcore.http11 | response_closed.started
+17:05:01 | DEBUG   | httpcore.http11 | response_closed.complete
+17:05:01 | DEBUG   | openai._base_client | HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "200 OK" Headers({'date': 'Sat, 18 Apr 2026 09:05:01 GMT', 'content-type': 'application/json', 'transfer-encoding': 'chunked', 'connection': 'keep-alive', 'access-control-expose-headers': 'X-Request-ID', 'openai-organization': 'user-f5wll5obbmjmgmioddupghlw', 'openai-processing-ms': '15743', 'openai-project': 'proj_HHY4uLj8PI2L0t0VdgbABb8k', 'openai-version': '2020-10-01', 'server': 'cloudflare', 'strict-transport-security': 'max-age=31536000; includeSubDomains; preload', 'via': 'envoy-router-6f65c46f88-5qvdd', 'x-ratelimit-limit-requests': '500', 'x-ratelimit-remaining-requests': '499', 'x-ratelimit-reset-requests': '120ms', 'x-request-id': 'req_c403dcc2e88440ea989b966b3be0a9a5', 'x-openai-proxy-wasm': 'v0.1', 'cf-cache-status': 'DYNAMIC', 'x-content-type-options': 'nosniff', 'content-encoding': 'gzip', 'cf-ray': '9ee280e0d9e3b68d-KUL', 'alt-svc': 'h3=":443"; ma=86400'})
+17:05:01 | DEBUG   | openai._base_client | request_id: req_c403dcc2e88440ea989b966b3be0a9a5
+17:05:02 | INFO    | humeo.ingest | Transcribing chunk 5/5 (2226.2s-2782.7s)
+17:05:02 | DEBUG   | openai._base_client | Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='.humeo_work_clean_20260418_170252\\openai_transcribe\\source_audio_part_005.wav'>)))], 'idempotency_key': 'stainless-python-retry-7fe08bc9-6fcc-41e0-a641-db8333a5c25e', 'content': None, 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json', 'timestamp_granularities': ['word', 'segment']}}
+17:05:02 | DEBUG   | openai._base_client | Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+17:05:02 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:05:02 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:05:02 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:05:02 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:05:02 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:05:22 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Sat, 18 Apr 2026 09:05:22 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'access-control-expose-headers', b'X-Request-ID'), (b'openai-organization', b'user-f5wll5obbmjmgmioddupghlw'), (b'openai-processing-ms', b'15871'), (b'openai-project', b'proj_HHY4uLj8PI2L0t0VdgbABb8k'), (b'openai-version', b'2020-10-01'), (b'Server', b'cloudflare'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains; preload'), (b'via', b'envoy-router-86788cc7c9-8fp72'), (b'x-ratelimit-limit-requests', b'500'), (b'x-ratelimit-remaining-requests', b'499'), (b'x-ratelimit-reset-requests', b'120ms'), (b'x-request-id', b'req_d17d27419fae415db30a805e5b777290'), (b'x-openai-proxy-wasm', b'v0.1'), (b'cf-cache-status', b'DYNAMIC'), (b'X-Content-Type-Options', b'nosniff'), (b'Content-Encoding', b'gzip'), (b'CF-RAY', b'9ee2816328cbb68d-KUL'), (b'alt-svc', b'h3=":443"; ma=86400')])
+17:05:22 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:05:22 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:05:22 | DEBUG   | httpcore.http11 | response_closed.started
+17:05:22 | DEBUG   | httpcore.http11 | response_closed.complete
+17:05:22 | DEBUG   | openai._base_client | HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "200 OK" Headers({'date': 'Sat, 18 Apr 2026 09:05:22 GMT', 'content-type': 'application/json', 'transfer-encoding': 'chunked', 'connection': 'keep-alive', 'access-control-expose-headers': 'X-Request-ID', 'openai-organization': 'user-f5wll5obbmjmgmioddupghlw', 'openai-processing-ms': '15871', 'openai-project': 'proj_HHY4uLj8PI2L0t0VdgbABb8k', 'openai-version': '2020-10-01', 'server': 'cloudflare', 'strict-transport-security': 'max-age=31536000; includeSubDomains; preload', 'via': 'envoy-router-86788cc7c9-8fp72', 'x-ratelimit-limit-requests': '500', 'x-ratelimit-remaining-requests': '499', 'x-ratelimit-reset-requests': '120ms', 'x-request-id': 'req_d17d27419fae415db30a805e5b777290', 'x-openai-proxy-wasm': 'v0.1', 'cf-cache-status': 'DYNAMIC', 'x-content-type-options': 'nosniff', 'content-encoding': 'gzip', 'cf-ray': '9ee2816328cbb68d-KUL', 'alt-svc': 'h3=":443"; ma=86400'})
+17:05:22 | DEBUG   | openai._base_client | request_id: req_d17d27419fae415db30a805e5b777290
+17:05:22 | INFO    | humeo.video_cache | Updated video cache manifest: C:\Users\wbrya\AppData\Local\humeo\video_cache_manifest.json
+17:05:22 | INFO    | humeo.pipeline | --- STAGE 2: CLIP SELECTION ---
+17:05:23 | INFO    | humeo.clip_selector | Gemini clip selection (model=gemini-3.1-flash-lite-preview, candidate_pool=12, temp=0.70)...
+17:05:23 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:05:23 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:05:23 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405DE4C80>
+17:05:23 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405E5F350> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:05:23 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001940406BC80>
+17:05:23 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:05:23 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:05:23 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:05:23 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:05:23 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:05:41 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 503, b'Service Unavailable', [(b'X-Gemini-Service-Tier', b'standard'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:05:41 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=17608'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:05:41 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:05:41 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:05:41 | DEBUG   | httpcore.http11 | response_closed.started
+17:05:41 | DEBUG   | httpcore.http11 | response_closed.complete
+17:05:41 | WARNING | humeo.clip_selector | Gemini clip selection attempt 1/3 failed: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+17:05:43 | INFO    | humeo.clip_selector | Gemini clip selection (model=gemini-3.1-flash-lite-preview, candidate_pool=12, temp=0.70)...
+17:05:43 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:05:43 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:05:43 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:05:43 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:05:43 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:05:43 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:06:09 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 503, b'Service Unavailable', [(b'X-Gemini-Service-Tier', b'standard'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:06:09 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=26249'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:06:09 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:06:09 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:06:09 | DEBUG   | httpcore.http11 | response_closed.started
+17:06:09 | DEBUG   | httpcore.http11 | response_closed.complete
+17:06:09 | WARNING | humeo.clip_selector | Gemini clip selection attempt 2/3 failed: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+17:06:13 | INFO    | humeo.clip_selector | Gemini clip selection (model=gemini-3.1-flash-lite-preview, candidate_pool=12, temp=0.70)...
+17:06:13 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:06:13 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:06:13 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:06:13 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:06:13 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:06:13 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:07:38 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:07:38 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=85245'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:07:38 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:07:38 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:07:38 | DEBUG   | httpcore.http11 | response_closed.started
+17:07:38 | DEBUG   | httpcore.http11 | response_closed.complete
+17:07:38 | INFO    | humeo.clip_selector | Parsed 12 clips from LLM response
+17:07:38 | INFO    | humeo.clip_selector | Clip ranking: kept 8 / 12 candidates (threshold=0.70, min=5, max=8, dropped=4).
+17:07:38 | INFO    | humeo.clip_selector |   [001] score=0.98  Prediction Markets and Active Investing
+17:07:38 | INFO    | humeo.clip_selector |   [002] score=0.95  Prediction Market Growth Potential
+17:07:38 | INFO    | humeo.clip_selector |   [003] score=0.92  Predicting the Federal Deficit
+17:07:38 | INFO    | humeo.clip_selector |   [004] score=0.88  Innovation as a Deflationary Force
+17:07:38 | INFO    | humeo.clip_selector |   [005] score=0.85  The Future of the Dollar
+17:07:38 | INFO    | humeo.clip_selector |   [006] score=0.82  The Real State of Debt
+17:07:38 | INFO    | humeo.clip_selector |   [007] score=0.78  AI Impact on Hiring
+17:07:38 | INFO    | humeo.clip_selector |   [008] score=0.75  Why Consumers are in a Funk
+17:07:38 | INFO    | humeo.clip_selector | Saved 8 clips to .humeo_work_clean_20260418_170252\clips.json
+17:07:38 | INFO    | humeo.clip_selection_cache | Wrote clips.meta.json and clip_selection_raw.json
+17:07:38 | INFO    | humeo.pipeline | Selected 8 clips:
+17:07:38 | INFO    | humeo.pipeline |   [001] 177.9s-226.7s (48.8s) score=0.98 - Prediction Markets and Active Investing
+17:07:38 | INFO    | humeo.pipeline |   [002] 295.8s-344.3s (48.5s) score=0.95 - Prediction Market Growth Potential
+17:07:38 | INFO    | humeo.pipeline |   [003] 377.1s-447.6s (70.5s) score=0.92 - Predicting the Federal Deficit
+17:07:38 | INFO    | humeo.pipeline |   [004] 1369.2s-1426.0s (56.8s) score=0.88 - Innovation as a Deflationary Force
+17:07:38 | INFO    | humeo.pipeline |   [005] 923.9s-971.8s (47.9s) score=0.85 - The Future of the Dollar
+17:07:38 | INFO    | humeo.pipeline |   [006] 685.8s-745.2s (59.4s) score=0.82 - The Real State of Debt
+17:07:38 | INFO    | humeo.pipeline |   [007] 1648.8s-1693.5s (44.7s) score=0.78 - AI Impact on Hiring
+17:07:38 | INFO    | humeo.pipeline |   [008] 2203.5s-2261.7s (58.2s) score=0.75 - Why Consumers are in a Funk
+17:07:38 | INFO    | humeo.pipeline | --- STAGE 2.25: HOOK DETECTION (enabled=True) ---
+17:07:39 | INFO    | humeo.hook_detector | Gemini hook detection (model=gemini-3.1-flash-lite-preview, clips=8)...
+17:07:39 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:07:39 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:07:39 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405DE7770>
+17:07:39 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405DC6550> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:07:39 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001940561A660>
+17:07:39 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:07:39 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:07:39 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:07:39 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:07:39 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:08:08 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:08:08 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=29606'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:08:08 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:08:08 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:08:08 | DEBUG   | httpcore.http11 | response_closed.started
+17:08:08 | DEBUG   | httpcore.http11 | response_closed.complete
+17:08:08 | DEBUG   | httpcore.connection | close.started
+17:08:08 | DEBUG   | httpcore.connection | close.complete
+17:08:08 | INFO    | humeo.hook_detector | Clip 001: hook set to [42.54, 48.80] (was [0.00, 4.50]) -- This sentence provides a clear, punchy summary of the topic that works independently of the preceding context.
+17:08:08 | INFO    | humeo.hook_detector | Clip 002: hook set to [0.00, 4.48] (was [0.00, 4.00]) -- It opens with a bold, high-stakes prediction involving a specific, large number, which is a classic viral hook.
+17:08:08 | INFO    | humeo.hook_detector | Clip 003: rejected hook window [0.00, 10.12] (failed validation); keeping selector hook.
+17:08:08 | INFO    | humeo.hook_detector | Clip 004: hook set to [48.91, 51.55] (was [0.00, 3.00]) -- This is a strong, declarative claim that summarizes the preceding list of technologies and provides a clear thesis state
+17:08:08 | INFO    | humeo.hook_detector | Clip 005: hook set to [39.75, 45.72] (was [0.00, 4.00]) -- Comparing current political economic policy to a well-known historical precedent is a high-interest, controversial hook.
+17:08:08 | INFO    | humeo.hook_detector | Clip 006: hook set to [24.16, 29.85] (was [0.00, 3.00]) -- This acts as a contrarian insight that challenges conventional wisdom about how to measure debt.
+17:08:08 | INFO    | humeo.hook_detector | Clip 007: hook set to [2.07, 8.85] (was [0.00, 4.00]) -- This addresses a relatable, high-anxiety topic for a large demographic, making it immediately compelling.
+17:08:08 | INFO    | humeo.hook_detector | Clip 008: hook set to [0.00, 6.02] (was [0.00, 3.00]) -- It starts with a strong, negative emotional claim that immediately sets the stakes for the rest of the clip.
+17:08:08 | INFO    | humeo.hook_detector | Hook detection: updated 7 / 8 clips (1 rejected, 0 kept as-is).
+17:08:08 | INFO    | humeo.hook_detector | Wrote hooks.meta.json, hooks.json and hooks_raw.json
+17:08:08 | INFO    | humeo.pipeline | --- STAGE 2.5: CONTENT PRUNING (level=balanced) ---
+17:08:09 | INFO    | humeo.content_pruning | Gemini content pruning (model=gemini-3.1-flash-lite-preview, level=balanced, clips=8)...
+17:08:09 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:08:09 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:08:09 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E355E0>
+17:08:09 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405DC7A50> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:08:09 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E35460>
+17:08:09 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:08:09 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:08:09 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:08:09 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:08:09 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:08:23 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:08:23 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=14421'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:08:23 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:08:23 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:08:23 | DEBUG   | httpcore.http11 | response_closed.started
+17:08:23 | DEBUG   | httpcore.http11 | response_closed.complete
+17:08:23 | DEBUG   | httpcore.connection | close.started
+17:08:23 | DEBUG   | httpcore.connection | close.complete
+17:08:23 | INFO    | humeo.content_pruning | Clip 005: prune decision clamped (hook=True min=True cap=False) requested 0.00/2.18 -> applied 0.00/0.00
+17:08:23 | INFO    | humeo.content_pruning | Content pruning done: removed 10.5s across 8 clips (2.4% of total).
+17:08:23 | INFO    | humeo.content_pruning |   [003] trim=0.00s/10.50s  70.5s -> 60.0s
+17:08:23 | INFO    | humeo.content_pruning | Wrote prune.meta.json, prune.json and prune_raw.json
+17:08:23 | INFO    | humeo.pipeline | --- STAGE 3: CLIP LAYOUTS ---
+17:08:26 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:08:26 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:08:26 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E36FF0>
+17:08:26 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405E38CD0> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:08:26 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E36ED0>
+17:08:26 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:08:26 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:08:26 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:08:26 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:08:26 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:08:54 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:08:53 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=27758'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:08:54 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:08:54 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:08:54 | DEBUG   | httpcore.http11 | response_closed.started
+17:08:54 | DEBUG   | httpcore.http11 | response_closed.complete
+17:08:54 | DEBUG   | httpcore.connection | close.started
+17:08:54 | DEBUG   | httpcore.connection | close.complete
+17:08:54 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:08:54 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:08:54 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001940406BA40>
+17:08:54 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405E38B50> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:08:54 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x00000194055A4EC0>
+17:08:54 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:08:54 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:08:54 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:08:54 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:08:54 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:08:59 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:08:59 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=4879'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:08:59 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:08:59 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:08:59 | DEBUG   | httpcore.http11 | response_closed.started
+17:08:59 | DEBUG   | httpcore.http11 | response_closed.complete
+17:08:59 | DEBUG   | httpcore.connection | close.started
+17:08:59 | DEBUG   | httpcore.connection | close.complete
+17:09:00 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:09:00 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:09:00 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E36750>
+17:09:00 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405E3A0D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:09:00 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E36300>
+17:09:00 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:09:00 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:09:00 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:09:00 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:09:00 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:04 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:04 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=3990'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:09:04 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:09:04 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:09:04 | DEBUG   | httpcore.http11 | response_closed.started
+17:09:04 | DEBUG   | httpcore.http11 | response_closed.complete
+17:09:04 | DEBUG   | httpcore.connection | close.started
+17:09:04 | DEBUG   | httpcore.connection | close.complete
+17:09:04 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:09:04 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:09:04 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E36E70>
+17:09:04 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405DC6CD0> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:09:04 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E37080>
+17:09:04 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:09:04 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:09:04 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:09:04 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:09:04 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:07 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:07 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=2403'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:09:07 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:09:07 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:09:07 | DEBUG   | httpcore.http11 | response_closed.started
+17:09:07 | DEBUG   | httpcore.http11 | response_closed.complete
+17:09:07 | DEBUG   | httpcore.connection | close.started
+17:09:07 | DEBUG   | httpcore.connection | close.complete
+17:09:07 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:09:07 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:09:07 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E35040>
+17:09:07 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405DC72D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:09:07 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405E35C40>
+17:09:07 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:09:07 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:09:07 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:09:07 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:09:07 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:11 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:11 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=3606'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:09:11 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:09:11 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:09:11 | DEBUG   | httpcore.http11 | response_closed.started
+17:09:11 | DEBUG   | httpcore.http11 | response_closed.complete
+17:09:11 | DEBUG   | httpcore.connection | close.started
+17:09:11 | DEBUG   | httpcore.connection | close.complete
+17:09:11 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:09:11 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:09:11 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405ED8470>
+17:09:11 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405DC75D0> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:09:11 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405ED8350>
+17:09:11 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:09:11 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:09:11 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:09:11 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:09:11 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:20 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:19 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=8195'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:09:20 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:09:20 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:09:20 | DEBUG   | httpcore.http11 | response_closed.started
+17:09:20 | DEBUG   | httpcore.http11 | response_closed.complete
+17:09:20 | DEBUG   | httpcore.connection | close.started
+17:09:20 | DEBUG   | httpcore.connection | close.complete
+17:09:20 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:09:20 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:09:20 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405ED95B0>
+17:09:20 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405E38750> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:09:20 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405ED9490>
+17:09:20 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:09:20 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:09:20 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:09:20 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:09:20 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:24 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:24 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=4135'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:09:24 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:09:24 | DEBUG   | httpcore.http11 | receive_response_body.complete
+17:09:24 | DEBUG   | httpcore.http11 | response_closed.started
+17:09:24 | DEBUG   | httpcore.http11 | response_closed.complete
+17:09:24 | DEBUG   | httpcore.connection | close.started
+17:09:24 | DEBUG   | httpcore.connection | close.complete
+17:09:25 | INFO    | google_genai.models | AFC is enabled with max remote calls: 10.
+17:09:25 | DEBUG   | httpcore.connection | connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+17:09:25 | DEBUG   | httpcore.connection | connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405EDA780>
+17:09:25 | DEBUG   | httpcore.connection | start_tls.started ssl_context=<ssl.SSLContext object at 0x0000019405E3B650> server_hostname='generativelanguage.googleapis.com' timeout=None
+17:09:25 | DEBUG   | httpcore.connection | start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x0000019405EDA660>
+17:09:25 | DEBUG   | httpcore.http11 | send_request_headers.started request=<Request [b'POST']>
+17:09:25 | DEBUG   | httpcore.http11 | send_request_headers.complete
+17:09:25 | DEBUG   | httpcore.http11 | send_request_body.started request=<Request [b'POST']>
+17:09:25 | DEBUG   | httpcore.http11 | send_request_body.complete
+17:09:25 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:58 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:58 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=33525'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')17:09:25 | DEBUG   | httpcore.http11 | receive_response_headers.started request=<Request [b'POST']>
+17:09:58 | DEBUG   | httpcore.http11 | receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'X-Gemini-Service-Tier', b'standard'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Encoding', b'gzip'), (b'Date', b'Sat, 18 Apr 2026 09:09:58 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=33525'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+17:09:58 | DEBUG   | httpcore.http11 | receive_response_body.started request=<Request [b'POST']>
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:10:28 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_003.ass (31 cues)
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:10:28 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_003.ass (31 cues)
+
+
+
+
+
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:10:28 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_003.ass (31 cues)
+
+
+
+
+
+
+
+
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.layout_vision | Wrote layout_vision.meta.json and layout_vision.json
+17:09:58 | INFO    | humeo.pipeline | --- STAGE 4: RENDER ---
+17:09:58 | DEBUG   | httpcore.connection | close.started
+17:09:58 | DEBUG   | httpcore.connection | close.complete
+17:09:58 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_001.ass (24 cues)
+17:10:13 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=001 layout=sit_center output=output\short_001.mp4 success=True
+17:10:13 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_002.ass (37 cues)
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:10:28 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_003.ass (31 cues)
+17:10:41 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=003 layout=split_chart_person output=output\short_003.mp4 success=True
+17:10:41 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_004.ass (28 cues)
+17:10:52 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=004 layout=sit_center output=output\short_004.mp4 success=True
+17:10:52 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_005.ass (28 cues)
+17:11:02 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=005 layout=split_chart_person output=output\short_005.mp4 success=True
+17:11:02 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_006.ass (27 cues)
+17:11:14 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=006 layout=split_chart_person output=output\short_006.mp4 success=True
+17:11:14 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_007.ass (25 cues)
+17:11:24 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=007 layout=split_chart_person output=output\short_007.mp4 success=True
+17:11:24 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_008.ass (28 cues)
+17:11:37 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=008 layout=split_chart_person output=output\short_008.mp4 success=True
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+17:11:37 | INFO    | humeo.pipeline | PIPELINE COMPLETE - 8 shorts generated:
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_001.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_002.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:10:28 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=002 layout=zoom_call_center output=output\short_002.mp4 success=True
+17:10:28 | DEBUG   | httpcore.connection | close.started
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:10:28 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_003.ass (31 cues)
+17:10:41 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=003 layout=split_chart_person output=output\short_003.mp4 success=True
+17:10:41 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_004.ass (28 cues)
+17:10:52 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=004 layout=sit_center output=output\short_004.mp4 success=True
+17:10:52 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_005.ass (28 cues)
+17:11:02 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=005 layout=split_chart_person output=output\short_005.mp4 success=True
+17:11:02 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_006.ass (27 cues)
+17:11:14 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=006 layout=split_chart_person output=output\short_006.mp4 success=True
+17:11:14 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_007.ass (25 cues)
+17:11:24 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=007 layout=split_chart_person output=output\short_007.mp4 success=True
+17:11:24 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_008.ass (28 cues)
+17:11:37 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=008 layout=split_chart_person output=output\short_008.mp4 success=True
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+17:11:37 | INFO    | humeo.pipeline | PIPELINE COMPLETE - 8 shorts generated:
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_001.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_002.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:10:28 | DEBUG   | httpcore.connection | close.complete
+17:10:28 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_003.ass (31 cues)
+17:10:41 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=003 layout=split_chart_person output=output\short_003.mp4 success=True
+17:10:41 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_004.ass (28 cues)
+17:10:52 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=004 layout=sit_center output=output\short_004.mp4 success=True
+17:10:52 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_005.ass (28 cues)
+17:11:02 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=005 layout=split_chart_person output=output\short_005.mp4 success=True
+17:11:02 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_006.ass (27 cues)
+17:11:14 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=006 layout=split_chart_person output=output\short_006.mp4 success=True
+17:11:14 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_007.ass (25 cues)
+17:11:24 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=007 layout=split_chart_person output=output\short_007.mp4 success=True
+17:11:24 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_008.ass (28 cues)
+17:11:37 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=008 layout=split_chart_person output=output\short_008.mp4 success=True
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+17:11:37 | INFO    | humeo.pipeline | PIPELINE COMPLETE - 8 shorts generated:
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_001.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_002.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:10:41 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_004.ass (28 cues)
+17:10:52 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=004 layout=sit_center output=output\short_004.mp4 success=True
+17:10:52 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_005.ass (28 cues)
+17:11:02 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=005 layout=split_chart_person output=output\short_005.mp4 success=True
+17:11:02 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_006.ass (27 cues)
+17:11:14 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=006 layout=split_chart_person output=output\short_006.mp4 success=True
+17:11:14 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_007.ass (25 cues)
+17:11:24 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=007 layout=split_chart_person output=output\short_007.mp4 success=True
+17:11:24 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_008.ass (28 cues)
+17:11:37 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=008 layout=split_chart_person output=output\short_008.mp4 success=True
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+17:11:37 | INFO    | humeo.pipeline | PIPELINE COMPLETE - 8 shorts generated:
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_001.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_002.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:11:14 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=006 layout=split_chart_person output=output\short_006.mp4 success=True
+17:11:14 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_007.ass (25 cues)
+17:11:24 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=007 layout=split_chart_person output=output\short_007.mp4 success=True
+17:11:24 | INFO    | humeo.cutter | Generated ASS: .humeo_work_clean_20260418_170252\subtitles\clip_008.ass (28 cues)
+17:11:37 | INFO    | humeo.reframe_ffmpeg | reframe_clip_ffmpeg: clip=008 layout=split_chart_person output=output\short_008.mp4 success=True
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+17:11:37 | INFO    | humeo.pipeline | PIPELINE COMPLETE - 8 shorts generated:
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_001.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_002.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline | PIPELINE COMPLETE - 8 shorts generated:
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_001.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_002.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_004.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_005.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_006.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_007.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+17:11:37 | INFO    | humeo.pipeline |   -> output\short_008.mp4
+17:11:37 | INFO    | humeo.pipeline | ============================================================
+
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+Done. 8 shorts generated in: output
+   -> output\short_001.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+   -> output\short_002.mp4
+   -> output\short_003.mp4
+   -> output\short_003.mp4
+   -> output\short_004.mp4
+   -> output\short_005.mp4
+   -> output\short_006.mp4
+   -> output\short_005.mp4
+   -> output\short_006.mp4
+   -> output\short_007.mp4
+   -> output\short_007.mp4
+   -> output\short_008.mp4

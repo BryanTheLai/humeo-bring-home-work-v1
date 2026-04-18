@@ -64,6 +64,34 @@ PruneLevel = Literal["off", "conservative", "balanced", "aggressive"]
 
 VALID_LEVELS: tuple[PruneLevel, ...] = ("off", "conservative", "balanced", "aggressive")
 
+# The clip-selection prompt uses `[0.0, 3.0]` as an example / fallback hook
+# window. Gemini frequently copies this placeholder verbatim instead of
+# localising the real hook, which silently disables Stage 2.5 start-trims for
+# every clip (the hook clamp below refuses to trim past `hook_start_sec`, so
+# any `trim_start_sec > 0` returned by the prune LLM gets zeroed).
+#
+# Treat this exact fingerprint as "no real hook" for clamp purposes. The real
+# fix is the Stage 2.25 hook detector (``humeo.hook_detector``) which
+# overwrites the clip's hook fields with a localised window before pruning
+# runs. This constant is the belt-and-suspenders guard for the case where
+# hook detection is disabled, fails, or cache-hits stale data.
+_DEFAULT_HOOK_FINGERPRINT: tuple[float, float] = (0.0, 3.0)
+_DEFAULT_HOOK_EPS: float = 1e-3
+
+
+def _looks_like_default_hook(hook_start: float | None, hook_end: float | None) -> bool:
+    """True when the hook window matches the prompt's 0-3s placeholder.
+
+    This is intentionally a narrow, exact-match check so a real hook that
+    happens to open at t=0 with a 3.0s window is still respected.
+    """
+    if hook_start is None or hook_end is None:
+        return False
+    return (
+        abs(hook_start - _DEFAULT_HOOK_FINGERPRINT[0]) < _DEFAULT_HOOK_EPS
+        and abs(hook_end - _DEFAULT_HOOK_FINGERPRINT[1]) < _DEFAULT_HOOK_EPS
+    )
+
 # Per-level cap on the fraction of the original clip the LLM is allowed to
 # trim. Even if the LLM tries to be more eager, we clamp. Final duration is
 # additionally clamped to ``MIN_CLIP_DURATION_SEC``.
@@ -155,9 +183,19 @@ def _clamp_decision(
         te = te * scale
         stats.max_pct_protected = True
 
-    if clip.hook_start_sec is not None and clip.hook_end_sec is not None:
-        hook_lo = clip.hook_start_sec
-        hook_hi = clip.hook_end_sec
+    # Only protect the hook when the clip carries a *real* localised hook
+    # window. The clip-selection LLM frequently echoes the prompt's
+    # 0.0-3.0s placeholder, which would otherwise lock ``trim_start`` to 0
+    # for every clip and silently disable the entire pruning stage. See
+    # ``_looks_like_default_hook`` for the fingerprint rationale.
+    hook_is_real = (
+        clip.hook_start_sec is not None
+        and clip.hook_end_sec is not None
+        and not _looks_like_default_hook(clip.hook_start_sec, clip.hook_end_sec)
+    )
+    if hook_is_real:
+        hook_lo = clip.hook_start_sec  # type: ignore[assignment]
+        hook_hi = clip.hook_end_sec  # type: ignore[assignment]
         if ts > max(0.0, hook_lo - 0.25):
             ts = max(0.0, hook_lo - 0.25)
             stats.hook_protected = True
@@ -181,17 +219,121 @@ def _clamp_decision(
     return ts, te, stats
 
 
+# Tolerance used when snapping trim boundaries to WhisperX segment edges. A
+# 3s window comfortably covers "finish the current sentence" cases without
+# materially deviating from what the LLM asked for. Tuned on the reported
+# mid-sentence cut in clip 001 of the ``PdVv_vLkUgk`` run (6.38s trim vs a
+# sentence that ended ~1.5s later).
+_SEGMENT_SNAP_TOLERANCE_SEC: float = 3.0
+
+
+def _snap_trims_to_segment_boundaries(
+    clip: Clip,
+    transcript: dict,
+    *,
+    level: PruneLevel,
+    tolerance_sec: float = _SEGMENT_SNAP_TOLERANCE_SEC,
+) -> tuple[float, float]:
+    """Snap an already-clamped ``(trim_start, trim_end)`` to phrase boundaries.
+
+    WhisperX segments correspond to natural phrase / sentence groupings.
+    Landing cuts on segment edges eliminates the "this could be..." class of
+    mid-sentence truncation, even when the LLM rounds to an arbitrary
+    syllable.
+
+    Direction preference:
+
+    - ``trim_start``: prefer the nearest segment START at-or-after the
+      current in-point (trim a hair more to drop lead-in filler). Fallback
+      is the nearest segment start behind, within tolerance.
+    - ``trim_end``: prefer the nearest segment END at-or-after the current
+      out-point (let the sentence finish, keeping MORE content). Fallback
+      is the nearest segment end before, within tolerance.
+
+    Safety: the snapped pair is reverted if it would violate
+    ``MIN_CLIP_DURATION_SEC``, exceed the level's ``max_pct`` trim cap, or
+    eat into a real (non-placeholder) hook window. Snapping can only
+    *improve* a decision, never break it.
+    """
+    ts0 = float(clip.trim_start_sec)
+    te0 = float(clip.trim_end_sec)
+    if ts0 < 0.05 and te0 < 0.05:
+        return ts0, te0
+
+    segs = _segments_within_clip(transcript, clip)
+    if not segs:
+        return ts0, te0
+
+    duration = clip.duration_sec
+    seg_starts = [float(s["start"]) for s in segs]
+    seg_ends = [float(s["end"]) for s in segs]
+
+    new_ts = ts0
+    if ts0 >= 0.05:
+        forward = [s for s in seg_starts if s >= ts0 and (s - ts0) <= tolerance_sec]
+        backward = [s for s in seg_starts if s < ts0 and (ts0 - s) <= tolerance_sec]
+        if forward:
+            new_ts = min(forward)
+        elif backward:
+            new_ts = max(backward)
+
+    new_te = te0
+    if te0 >= 0.05:
+        out0 = duration - te0
+        forward = [e for e in seg_ends if e >= out0 and (e - out0) <= tolerance_sec]
+        backward = [e for e in seg_ends if e < out0 and (out0 - e) <= tolerance_sec]
+        if forward:
+            new_out = min(forward)
+        elif backward:
+            new_out = max(backward)
+        else:
+            new_out = out0
+        new_te = max(0.0, duration - new_out)
+
+    new_ts = max(0.0, min(new_ts, duration))
+    new_te = max(0.0, min(new_te, duration - new_ts))
+
+    min_final = min(float(MIN_CLIP_DURATION_SEC), duration)
+    if duration - new_ts - new_te < min_final - 1e-6:
+        return ts0, te0
+
+    max_pct = _MAX_TOTAL_TRIM_PCT.get(level, 0.0)
+    if max_pct > 0.0 and (new_ts + new_te) > duration * max_pct + 1e-6:
+        return ts0, te0
+
+    if (
+        clip.hook_start_sec is not None
+        and clip.hook_end_sec is not None
+        and not _looks_like_default_hook(clip.hook_start_sec, clip.hook_end_sec)
+    ):
+        hook_lo = float(clip.hook_start_sec)
+        hook_hi = float(clip.hook_end_sec)
+        if new_ts > max(0.0, hook_lo - 0.25) + 1e-6:
+            return ts0, te0
+        if duration - new_te < hook_hi + 0.25 - 1e-6:
+            return ts0, te0
+
+    return new_ts, new_te
+
+
 def apply_prune_decisions(
     clips: list[Clip],
     decisions: list[_PruneDecision],
     *,
     level: PruneLevel,
+    transcript: dict | None = None,
 ) -> list[Clip]:
     """Return new clips with trim_start / trim_end set from LLM decisions.
 
     Clips whose ``clip_id`` is missing from ``decisions`` are returned with
     trims of 0 / 0 (no-op). Decisions are always clamped; no exception is
     raised if the model returned invalid numbers.
+
+    When ``transcript`` is provided, each clamped trim pair is additionally
+    snapped to the nearest WhisperX segment boundary (see
+    :func:`_snap_trims_to_segment_boundaries`) so cuts never land
+    mid-sentence. The clamp is authoritative -- snapping only ever produces
+    an equally-safe boundary, never a looser one.
     """
     by_id = {d.clip_id: d for d in decisions}
     out: list[Clip] = []
@@ -203,7 +345,18 @@ def apply_prune_decisions(
         ts, te, stats = _clamp_decision(
             clip, d.trim_start_sec, d.trim_end_sec, level=level
         )
-        if stats.hook_protected or stats.min_duration_protected or stats.max_pct_protected:
+        # Surface every non-trivial clamp so silent degradations (e.g. a
+        # fake hook nuking every trim) are visible in INFO logs, not just
+        # buried in ``prune_raw.json``.
+        requested = d.trim_start_sec + d.trim_end_sec
+        applied = ts + te
+        reshaped = (
+            stats.hook_protected
+            or stats.min_duration_protected
+            or stats.max_pct_protected
+            or (requested > 0.0 and abs(applied - requested) > 0.05)
+        )
+        if reshaped:
             logger.info(
                 "Clip %s: prune decision clamped (hook=%s min=%s cap=%s) "
                 "requested %.2f/%.2f -> applied %.2f/%.2f",
@@ -216,7 +369,25 @@ def apply_prune_decisions(
                 ts,
                 te,
             )
-        out.append(clip.model_copy(update={"trim_start_sec": ts, "trim_end_sec": te}))
+        candidate = clip.model_copy(update={"trim_start_sec": ts, "trim_end_sec": te})
+        if transcript is not None:
+            snapped_ts, snapped_te = _snap_trims_to_segment_boundaries(
+                candidate, transcript, level=level
+            )
+            if abs(snapped_ts - ts) > 1e-3 or abs(snapped_te - te) > 1e-3:
+                logger.info(
+                    "Clip %s: prune boundaries snapped to segment edges "
+                    "%.2f/%.2f -> %.2f/%.2f",
+                    clip.clip_id,
+                    ts,
+                    te,
+                    snapped_ts,
+                    snapped_te,
+                )
+                candidate = candidate.model_copy(
+                    update={"trim_start_sec": snapped_ts, "trim_end_sec": snapped_te}
+                )
+        out.append(candidate)
     return out
 
 
@@ -545,7 +716,9 @@ def run_content_pruning_stage(
             for clip in clips
         ]
 
-    pruned = apply_prune_decisions(clips, decisions, level=level)
+    pruned = apply_prune_decisions(
+        clips, decisions, level=level, transcript=transcript
+    )
     _log_prune_summary(pruned, clips)
 
     meta = _prune_meta(

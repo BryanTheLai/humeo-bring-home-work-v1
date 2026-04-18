@@ -28,9 +28,11 @@ from humeo.content_pruning import (
     _build_user_message,
     _clamp_decision,
     _clips_fingerprint,
+    _looks_like_default_hook,
     _parse_decisions,
     _PruneDecision,
     _segments_within_clip,
+    _snap_trims_to_segment_boundaries,
     apply_prune_decisions,
     request_prune_decisions,
     run_content_pruning_stage,
@@ -118,6 +120,52 @@ def test_clamp_level_off_nulls_trim():
     assert ts == 0.0 and te == 0.0
 
 
+def test_default_hook_fingerprint_is_recognised():
+    """The clip-selection prompt's 0.0-3.0s placeholder must be detected.
+
+    This is the exact fingerprint we observed Gemini echoing verbatim for
+    every clip in the Cathy Wood run, which silently disabled Stage 2.5
+    start-trims until P1 was fixed.
+    """
+    assert _looks_like_default_hook(0.0, 3.0) is True
+    assert _looks_like_default_hook(None, None) is False
+    assert _looks_like_default_hook(0.0, 2.9) is False
+    assert _looks_like_default_hook(0.05, 3.0) is False
+    assert _looks_like_default_hook(1.2, 4.8) is False  # real hook, untouched
+
+
+def test_clamp_ignores_default_hook_window():
+    """Regression test for P1: a fake [0.0, 3.0] hook must not gate trim_start.
+
+    Before the fix, every clip that arrived at Stage 2.5 with the default
+    fallback hook had its ``trim_start_sec`` clamped to 0.0, because the
+    protection rule said "do not trim past hook_start_sec" and
+    hook_start_sec was 0.0. This test reproduces the Cathy Wood clip 001
+    scenario where the LLM requested a 9.62s start-trim.
+    """
+    clip = _clip(end=226.7, hook_start=0.0, hook_end=3.0)  # duration ~58.4s
+    ts, te, stats = _clamp_decision(clip, 9.62, 0.0, level="balanced")
+
+    assert ts > 0.0, "trim_start must not be zeroed by a fake [0, 3] hook"
+    assert stats.hook_protected is False
+    # balanced cap on ~58.4s is ~11.7s; 9.62s fits under the cap so it
+    # should land roughly at the requested value (no reshape).
+    assert ts == pytest.approx(9.62, abs=0.05)
+
+
+def test_clamp_still_protects_real_hook():
+    """A non-default hook window must still cap trim_start_sec.
+
+    This is the positive case: the hook detector set a real
+    ``[1.5, 5.0]`` window, so Stage 2.5 should not trim past 1.5s
+    (minus the 0.25s safety margin).
+    """
+    clip = _clip(end=200.0, hook_start=1.5, hook_end=5.0)
+    ts, te, stats = _clamp_decision(clip, 10.0, 0.0, level="aggressive")
+    assert ts == pytest.approx(1.25, abs=1e-6)  # 1.5 - 0.25
+    assert stats.hook_protected is True
+
+
 def test_clamp_negatives_become_zero():
     clip = _clip(end=200.0)
     ts, te, stats = _clamp_decision(clip, -5.0, -2.0, level="balanced")
@@ -158,6 +206,171 @@ def test_apply_decisions_off_level_zeroes_everything():
     out = apply_prune_decisions([a], decisions, level="off")
     assert out[0].trim_start_sec == 0.0
     assert out[0].trim_end_sec == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Segment-boundary snapping (fixes mid-sentence cuts)
+# ---------------------------------------------------------------------------
+
+
+def _transcript_with_segments(base_start: float, rel_segments: list[tuple[float, float]]) -> dict:
+    """Build a transcript dict with segments expressed relative to ``base_start``."""
+    return {
+        "segments": [
+            {"start": base_start + s, "end": base_start + e, "text": f"seg {i}"}
+            for i, (s, e) in enumerate(rel_segments)
+        ]
+    }
+
+
+def test_snap_trim_end_forward_when_cut_falls_mid_sentence():
+    """Regression test for the "this could be..." bug.
+
+    A 58.4s clip with trim_end=6.38 cuts effectively at 52.02s. The nearest
+    segment end is at 53.5s (1.5s later, well within tolerance). Snap must
+    extend the clip forward to finish the sentence, reducing trim_end to
+    58.4 - 53.5 = 4.9s.
+    """
+    clip = _clip(start=168.3, end=226.7)
+    clip = clip.model_copy(update={"trim_start_sec": 0.04, "trim_end_sec": 6.38})
+    # Segments (clip-relative): include one that ends just after the
+    # requested cut point, and one just before. Forward snap should win.
+    transcript = _transcript_with_segments(
+        base_start=168.3,
+        rel_segments=[
+            (0.0, 4.5),
+            (4.5, 10.0),
+            (10.0, 30.0),
+            (30.0, 51.4),   # ends 0.62s BEFORE target out (52.02)
+            (51.4, 53.5),   # ends 1.48s AFTER target out -- cleanest sentence end
+            (53.5, 58.4),
+        ],
+    )
+
+    ts, te = _snap_trims_to_segment_boundaries(clip, transcript, level="balanced")
+
+    assert te == pytest.approx(58.4 - 53.5, abs=0.05), \
+        "trim_end must snap forward to the next segment end so the sentence finishes"
+    # Confirm the snap moved the boundary, not just rounding error.
+    assert abs(te - 6.38) > 0.5
+
+
+def test_snap_trim_end_backward_when_no_forward_segment_in_tolerance():
+    """If every forward segment end is outside tolerance, fall back to the
+    nearest backward boundary (cut slightly more than requested).
+
+    Clip is intentionally sized so the extra trim still respects
+    ``MIN_CLIP_DURATION_SEC`` and the level's ``max_pct`` cap; the snap
+    should never trade off correctness for boundary cleanliness.
+    """
+    # Use an 80s clip so trimming 11s still leaves 69s >= MIN_CLIP_DURATION_SEC.
+    clip = _clip(start=0.0, end=80.0)
+    clip = clip.model_copy(update={"trim_start_sec": 0.0, "trim_end_sec": 10.0})
+    # Target effective out-point = 80 - 10 = 70s. Only segment end 69s
+    # (1s backward) is within the 3s tolerance; 76s is outside it.
+    transcript = _transcript_with_segments(
+        base_start=0.0,
+        rel_segments=[
+            (0.0, 30.0),
+            (30.0, 69.0),
+            (76.0, 80.0),  # 6s forward -- outside 3s tolerance
+        ],
+    )
+
+    ts, te = _snap_trims_to_segment_boundaries(
+        clip, transcript, level="aggressive"
+    )
+
+    # Snap went to end=69.0 so trim_end = 80 - 69 = 11.0.
+    assert te == pytest.approx(11.0, abs=0.05)
+
+
+def test_snap_trim_start_forward_to_segment_start():
+    """``trim_start`` should snap to the next segment start within tolerance
+    so we drop lead-in filler cleanly.
+    """
+    clip = _clip(start=0.0, end=60.0)
+    clip = clip.model_copy(update={"trim_start_sec": 0.8, "trim_end_sec": 0.0})
+    transcript = _transcript_with_segments(
+        base_start=0.0,
+        rel_segments=[(0.0, 1.5), (1.5, 5.0), (5.0, 60.0)],
+    )
+
+    ts, _ = _snap_trims_to_segment_boundaries(clip, transcript, level="balanced")
+
+    # A segment starts at 1.5s (0.7s forward from request) -- snap there.
+    assert ts == pytest.approx(1.5, abs=0.05)
+
+
+def test_snap_is_noop_when_no_segments_cover_clip():
+    clip = _clip(start=0.0, end=60.0)
+    clip = clip.model_copy(update={"trim_start_sec": 1.0, "trim_end_sec": 2.0})
+    empty = {"segments": []}
+
+    ts, te = _snap_trims_to_segment_boundaries(clip, empty, level="balanced")
+
+    assert ts == 1.0
+    assert te == 2.0
+
+
+def test_snap_reverts_when_result_would_violate_min_duration():
+    """If snapping would push the clip below MIN_CLIP_DURATION_SEC, bail out
+    rather than silently shipping a too-short clip.
+    """
+    clip = _clip(start=0.0, end=MIN_CLIP_DURATION_SEC + 4.0)
+    clip = clip.model_copy(update={"trim_start_sec": 1.0, "trim_end_sec": 2.0})
+    # Segment end that would add a huge extra trim (pushing below min).
+    rel_segments = [(0.0, 1.0), (1.0, 3.5), (3.5, MIN_CLIP_DURATION_SEC + 4.0)]
+    transcript = _transcript_with_segments(0.0, rel_segments)
+
+    ts, te = _snap_trims_to_segment_boundaries(
+        clip, transcript, level="balanced"
+    )
+    # Final duration must stay legal, not lose 3+ more seconds via snapping.
+    final = clip.duration_sec - ts - te
+    assert final >= MIN_CLIP_DURATION_SEC - 1e-6
+
+
+def test_snap_respects_real_hook_window():
+    """A real (non-placeholder) hook must not be eaten by snapping."""
+    clip = _clip(start=0.0, end=60.0, hook_start=2.0, hook_end=5.0)
+    clip = clip.model_copy(update={"trim_start_sec": 1.0, "trim_end_sec": 0.0})
+    # Snapping trim_start forward to 3.0 would cross the hook_start. Must revert.
+    transcript = _transcript_with_segments(
+        base_start=0.0,
+        rel_segments=[(0.0, 1.0), (3.0, 10.0), (10.0, 60.0)],
+    )
+
+    ts, _ = _snap_trims_to_segment_boundaries(clip, transcript, level="balanced")
+
+    # The only forward candidate (3.0) crosses the hook -> revert to original.
+    assert ts == pytest.approx(1.0)
+
+
+def test_apply_decisions_with_transcript_performs_snap():
+    """End-to-end: ``apply_prune_decisions`` with a transcript snaps to
+    segment boundaries. Without a transcript, existing behavior is
+    preserved (backward compat for legacy callers).
+    """
+    clip = _clip(start=0.0, end=60.0)
+    decisions = [_PruneDecision(clip_id="001", trim_start_sec=0.0, trim_end_sec=8.0)]
+    transcript = _transcript_with_segments(
+        base_start=0.0,
+        rel_segments=[(0.0, 30.0), (30.0, 54.0), (54.0, 60.0)],
+    )
+
+    without_snap = apply_prune_decisions(
+        [clip], decisions, level="balanced"
+    )
+    with_snap = apply_prune_decisions(
+        [clip], decisions, level="balanced", transcript=transcript
+    )
+
+    # Without a transcript, trim_end stays at the LLM-requested 8.0.
+    assert without_snap[0].trim_end_sec == pytest.approx(8.0, abs=0.05)
+    # With the transcript, snap to seg end 54.0 -> trim_end = 6.0 (forward
+    # within 2s tolerance).
+    assert with_snap[0].trim_end_sec == pytest.approx(6.0, abs=0.05)
 
 
 # ---------------------------------------------------------------------------
@@ -320,7 +533,10 @@ def test_run_stage_writes_artifacts_and_applies_trims(mock_client_cls, cfg, monk
     _mock_gemini_ok(mock_client_cls, ts=3.0, te=2.0)
 
     clip = _clip("001", end=200.0)
-    transcript = _transcript_for(100.0, 200.0)
+    # Empty segments -> snap is a no-op, so this stays a pure plumbing test
+    # (LLM request -> applied trims -> artifact). Segment-boundary snapping
+    # behaviour is covered by the dedicated tests above.
+    transcript = {"segments": []}
 
     out = run_content_pruning_stage(
         cfg.work_dir,
@@ -348,7 +564,8 @@ def test_run_stage_is_cached_on_second_call(mock_client_cls, cfg, monkeypatch):
     mock_inst = _mock_gemini_ok(mock_client_cls, ts=3.0, te=2.0)
 
     clip = _clip("001", end=200.0)
-    transcript = _transcript_for(100.0, 200.0)
+    # Empty segments so snap is inert; this test isolates cache behaviour.
+    transcript = {"segments": []}
 
     run_content_pruning_stage(cfg.work_dir, [clip], transcript, transcript_fp="fp", config=cfg)
     assert mock_inst.models.generate_content.call_count == 1

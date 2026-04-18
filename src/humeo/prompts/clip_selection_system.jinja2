@@ -12,7 +12,13 @@ there, score them honestly, and return strict JSON.
 
 - A time-aligned podcast transcript. Each line is `[start_sec - end_sec] text`.
   Timestamps are on the source timeline and are word-accurate.
-- Target clip count: {{ count }}.
+- Candidate clip count: **exactly {{ count }}** (a candidate pool). A
+  downstream ranker keeps only the top clips that clear a quality bar, so
+  your job is to populate a large enough pool for it to rank. Do NOT
+  self-censor by omitting weaker moments — instead return them with a
+  lower `virality_score` and `needs_review: true`. The ranker drops weak
+  candidates automatically. Only return fewer than {{ count }} if the
+  transcript truly does not contain {{ count }} distinguishable moments.
 - Target clip duration: {{ min_dur }}s to {{ max_dur }}s (hard bounds).
 
 ## Output
@@ -98,10 +104,18 @@ above.
   contradicts the default position held by the audience. (3 points)
 - **Concrete prediction with stakes.** A specific, falsifiable prediction,
   ideally with a timeframe or number attached. (3 points)
+- **Specific-timeframe claim.** The prediction names a year, quarter, or
+  "in the next N months/years" horizon, not an open-ended someday. (2 points)
 - **Named call-out.** A specific person, company, or institution is named
   and criticized, defended, or challenged by name. (3 points)
 - **Hard number or data reveal.** A surprising statistic, chart takeaway, or
   dollar figure that reframes the topic. (3 points)
+- **Chart or slide reference.** The segment is anchored to a visible chart,
+  slide, table, or screen-share the viewer can follow along with (the
+  layout vision pass will upgrade these to `split_chart_person`). (2 points)
+- **First-person conviction.** The speaker says "I believe", "my view is",
+  "I'd bet", "we're doing X" — a high-conviction stake in the ground, not a
+  neutral summary of what others think. (2 points)
 - **First-principles reframe.** The speaker strips away jargon and rebuilds
   an idea from scratch in plain language. (2 points)
 
@@ -172,10 +186,13 @@ Avoid endings that:
 
 ## Requirements
 
-1. Return exactly {{ count }} clips, ranked by `virality_score` descending.
-   If the transcript cannot honestly support {{ count }} distinct high-scoring
-   clips, still return {{ count }} but use lower `virality_score` values and
-   set `needs_review: true` with a one-sentence `review_reason`.
+1. Return **exactly {{ count }}** clips (unless the transcript genuinely
+   contains fewer distinguishable moments), ranked by `virality_score`
+   descending. Populate the pool — the downstream ranker handles filtering.
+   Flag any clip whose rule points sum to 5 or fewer with
+   `needs_review: true` and a one-sentence `review_reason`; keep it in the
+   list. Never drop a candidate just because it is weaker than another —
+   the ranker needs the full pool to make a quality-vs-quantity trade-off.
 2. Each clip duration `end_time_sec - start_time_sec` must be between
    {{ min_dur }} and {{ max_dur }} seconds inclusive.
 3. `start_time_sec` and `end_time_sec` must match word-level timestamps that

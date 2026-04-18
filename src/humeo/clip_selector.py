@@ -34,6 +34,27 @@ T = TypeVar("T")
 LLM_MAX_ATTEMPTS = 3
 LLM_RETRY_DELAY_SEC = 2.0
 
+# Over-generation defaults (also exposed via PipelineConfig so callers can
+# override per-run without touching code). Rationale:
+#
+# - Ask Gemini for a *pool* of ~12 candidates at temperature 0.7 so the model
+#   considers a wider slice of the transcript instead of locking onto the
+#   first 5 obvious ones. More candidates -> more chance the actual gold
+#   nugget is in the list.
+# - Then rank by ``virality_score`` and keep everything >= threshold, but
+#   always keep at least ``min_kept`` and at most ``max_kept`` clips. This
+#   lets a single strong clip survive a weak transcript ("keep the best 5
+#   even if no one clears the bar") AND lets an exceptionally rich
+#   transcript ship 7-8 strong shorts instead of artificially capping at 5.
+DEFAULT_CANDIDATE_COUNT = 12
+DEFAULT_QUALITY_THRESHOLD = 0.70
+DEFAULT_MIN_KEPT = TARGET_CLIP_COUNT
+DEFAULT_MAX_KEPT = 8
+# Higher than the old 0.3 so the pool is meaningfully different from
+# "the same five most-obvious clips every run". Still well below 1.0 so we
+# do not get word-salad IDs or timestamps.
+DEFAULT_CANDIDATE_TEMPERATURE = 0.7
+
 
 def _retry_llm(name: str, fn: Callable[[], T], attempts: int = LLM_MAX_ATTEMPTS) -> T:
     last: Exception | None = None
@@ -49,8 +70,16 @@ def _retry_llm(name: str, fn: Callable[[], T], attempts: int = LLM_MAX_ATTEMPTS)
     raise last
 
 
-def build_prompt(transcript: dict) -> tuple[str, str]:
-    """Return ``(system_prompt, user_message)`` for the clip-selector LLM call."""
+def build_prompt(
+    transcript: dict, *, candidate_count: int = DEFAULT_CANDIDATE_COUNT
+) -> tuple[str, str]:
+    """Return ``(system_prompt, user_message)`` for the clip-selector LLM call.
+
+    ``candidate_count`` is the size of the candidate POOL we ask Gemini for.
+    A downstream ranker (``rank_and_filter_clips``) then keeps the top
+    clips that clear the quality threshold. Defaults preserve the previous
+    visible output (5 clips) when the pool is narrow.
+    """
     lines = []
     for seg in transcript.get("segments", []):
         start = seg.get("start", 0)
@@ -64,30 +93,128 @@ def build_prompt(transcript: dict) -> tuple[str, str]:
         transcript_text=transcript_text,
         min_dur=MIN_CLIP_DURATION_SEC,
         max_dur=MAX_CLIP_DURATION_SEC,
-        count=TARGET_CLIP_COUNT,
+        count=candidate_count,
     )
     return system, user
 
 
-def select_clips(transcript: dict, *, gemini_model: str | None = None) -> tuple[list[Clip], str]:
+def rank_and_filter_clips(
+    clips: list[Clip],
+    *,
+    threshold: float = DEFAULT_QUALITY_THRESHOLD,
+    min_kept: int = DEFAULT_MIN_KEPT,
+    max_kept: int = DEFAULT_MAX_KEPT,
+) -> list[Clip]:
+    """Rank ``clips`` by ``virality_score`` and apply the threshold+floor+cap.
+
+    Rules (in order, with clear precedence):
+
+    1. Sort descending by ``virality_score``.
+    2. Keep clips with ``virality_score >= threshold`` (or ``needs_review``
+       cleared). Reviewed-out clips (``needs_review=True``) are always sent
+       to the back of the priority queue.
+    3. If fewer than ``min_kept`` clips passed the threshold, fill up from
+       the remaining clips in rank order until we reach ``min_kept`` (or
+       run out of candidates).
+    4. Cap the final list at ``max_kept`` entries.
+    5. Renumber ``clip_id`` to ``001``, ``002``, ... so downstream artifacts
+       (keyframes, subtitles, output filenames) stay dense and ordered.
+
+    This is the "threshold with a floor" policy the user asked for: quality
+    first, but never ship zero shorts when the transcript is weak.
+    """
+    if not clips:
+        return []
+
+    def _priority(c: Clip) -> tuple[float, float]:
+        # needs_review clips fall behind same-score non-reviewed ones.
+        review_penalty = 0.5 if c.needs_review else 0.0
+        return (c.virality_score - review_penalty, c.virality_score)
+
+    ordered = sorted(clips, key=_priority, reverse=True)
+
+    strong = [c for c in ordered if c.virality_score >= threshold and not c.needs_review]
+    kept = list(strong)
+
+    if len(kept) < min_kept:
+        backfill = [c for c in ordered if c not in kept]
+        for c in backfill:
+            if len(kept) >= min_kept:
+                break
+            kept.append(c)
+
+    if len(kept) > max_kept:
+        kept = kept[:max_kept]
+
+    # Renumber clip_ids so consumers (filenames, layout vision, subtitles)
+    # always see 001..NNN in rank order regardless of what the LLM returned.
+    renumbered: list[Clip] = []
+    for i, c in enumerate(kept, start=1):
+        new_id = f"{i:03d}"
+        renumbered.append(c if c.clip_id == new_id else c.model_copy(update={"clip_id": new_id}))
+
+    dropped = len(ordered) - len(kept)
+    logger.info(
+        "Clip ranking: kept %d / %d candidates (threshold=%.2f, min=%d, max=%d, dropped=%d).",
+        len(renumbered),
+        len(ordered),
+        threshold,
+        min_kept,
+        max_kept,
+        dropped,
+    )
+    for c in renumbered:
+        logger.info(
+            "  [%s] score=%.2f %s %s",
+            c.clip_id,
+            c.virality_score,
+            "(review)" if c.needs_review else "",
+            c.topic,
+        )
+    return renumbered
+
+
+def select_clips(
+    transcript: dict,
+    *,
+    gemini_model: str | None = None,
+    candidate_count: int = DEFAULT_CANDIDATE_COUNT,
+    quality_threshold: float = DEFAULT_QUALITY_THRESHOLD,
+    min_kept: int = DEFAULT_MIN_KEPT,
+    max_kept: int = DEFAULT_MAX_KEPT,
+    temperature: float = DEFAULT_CANDIDATE_TEMPERATURE,
+) -> tuple[list[Clip], str]:
     """
     Call Gemini to select clips. Returns ``(clips, raw_json)`` for caching / debugging.
 
-    Uses ``google.genai.Client`` and ``GenerateContentConfig`` (see Google Gen AI SDK for Python).
+    The returned clip list has already been ranked + filtered by
+    :func:`rank_and_filter_clips`. ``raw_json`` is the untouched LLM
+    response so the cache artifact reflects the entire candidate pool for
+    audit / re-ranking without another LLM call.
+
+    Uses ``google.genai.Client`` and ``GenerateContentConfig`` (see Google
+    Gen AI SDK for Python).
     """
     model_name = (gemini_model or GEMINI_MODEL).strip()
-    system_prompt, user_text = build_prompt(transcript)
+    system_prompt, user_text = build_prompt(
+        transcript, candidate_count=candidate_count
+    )
 
     client = genai.Client(api_key=resolve_gemini_api_key())
 
     def _call() -> str:
-        logger.info("Gemini clip selection (model=%s)...", model_name)
+        logger.info(
+            "Gemini clip selection (model=%s, candidate_pool=%d, temp=%.2f)...",
+            model_name,
+            candidate_count,
+            temperature,
+        )
         response = client.models.generate_content(
             model=model_name,
             contents=user_text,
             config=types.GenerateContentConfig(
                 system_instruction=system_prompt,
-                temperature=0.3,
+                temperature=temperature,
                 response_mime_type="application/json",
             ),
         )
@@ -96,8 +223,34 @@ def select_clips(transcript: dict, *, gemini_model: str | None = None) -> tuple[
         return response.text
 
     raw = _retry_llm("Gemini clip selection", _call)
-    clips = _parse_clips(raw)
-    clips = sorted(clips, key=lambda c: c.virality_score, reverse=True)
+    candidates = _parse_clips(raw)
+    # The ranker can only backfill from the pool Gemini returned. If Gemini
+    # under-delivered (e.g. returned 2 of a requested 12), the min_kept floor
+    # is unenforceable -- warn loudly so we do not silently ship fewer shorts
+    # than the caller expected.
+    if len(candidates) < min_kept:
+        logger.warning(
+            "Clip selection: Gemini returned only %d candidates (requested %d, floor %d). "
+            "Output will be capped at %d shorts -- check prompt or transcript length.",
+            len(candidates),
+            candidate_count,
+            min_kept,
+            len(candidates),
+        )
+    elif len(candidates) < candidate_count:
+        logger.info(
+            "Clip selection: Gemini returned %d of %d requested candidates "
+            "(pool still >= floor of %d).",
+            len(candidates),
+            candidate_count,
+            min_kept,
+        )
+    clips = rank_and_filter_clips(
+        candidates,
+        threshold=quality_threshold,
+        min_kept=min_kept,
+        max_kept=max_kept,
+    )
     return clips, raw
 
 

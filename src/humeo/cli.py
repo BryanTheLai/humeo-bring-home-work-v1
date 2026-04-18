@@ -116,6 +116,23 @@ Examples:
     )
 
     parser.add_argument(
+        "--no-hook-detection",
+        action="store_true",
+        help=(
+            "Skip Stage 2.25 hook detection. The selector's hook window "
+            "(possibly the 0.0-3.0s placeholder) will be carried through. "
+            "Stage 2.5 content pruning still treats that exact placeholder "
+            "as 'no hook' so pruning is not disabled."
+        ),
+    )
+
+    parser.add_argument(
+        "--force-hook-detection",
+        action="store_true",
+        help="Re-run hook-detection LLM even when hooks.meta.json matches.",
+    )
+
+    parser.add_argument(
         "--clean-run",
         action="store_true",
         help=(
@@ -175,6 +192,8 @@ def main():
     force_clip_selection = args.force_clip_selection
     force_layout_vision = args.force_layout_vision
     force_content_pruning = args.force_content_pruning
+    force_hook_detection = args.force_hook_detection
+    detect_hooks = not args.no_hook_detection
     overwrite_outputs = False
     work_dir = args.work_dir
 
@@ -183,6 +202,7 @@ def main():
         force_clip_selection = True
         force_layout_vision = True
         force_content_pruning = True
+        force_hook_detection = True
         overwrite_outputs = True
         if work_dir is None:
             stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -202,6 +222,8 @@ def main():
         overwrite_outputs=overwrite_outputs,
         prune_level=args.prune_level,
         force_content_pruning=force_content_pruning,
+        detect_hooks=detect_hooks,
+        force_hook_detection=force_hook_detection,
         subtitle_font_size=args.subtitle_font_size,
         subtitle_margin_v=args.subtitle_margin_v,
         subtitle_max_words_per_cue=args.subtitle_max_words,

@@ -26,9 +26,9 @@ htmlcov/
 .env.*
 !.env.example
 
-# Humeo runtime artefacts
-# .humeo_work/
-# .humeo_work_*/
+# Humeo runtime artefacts (large; local only)
+.humeo_work/
+.humeo_work*/
 output/
 output_*/
 keyframes/
@@ -43,4 +43,3 @@ keyframes/
 .DS_Store
 Thumbs.db
 competitors_code
-/.humeo_work_clean_01

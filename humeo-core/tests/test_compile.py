@@ -1,4 +1,4 @@
-from humeo_core.primitives.compile import build_ffmpeg_cmd
+from humeo_core.primitives.compile import build_ffmpeg_cmd, plan_title_drawtext
 from humeo_core.schemas import Clip, LayoutInstruction, LayoutKind, RenderRequest
 
 
@@ -127,3 +127,107 @@ def test_title_is_drawn_on_single_subject_layouts():
         )
         fg = cmd[cmd.index("-filter_complex") + 1]
         assert "drawtext=text='Hook title'" in fg
+
+
+# ---------------------------------------------------------------------------
+# Title wrapping / auto-shrink (P2: fixes the "Prediction Markets vs
+# Derivatives" clipped-title bug reported against the Cathy Wood run).
+# ---------------------------------------------------------------------------
+
+
+def test_plan_title_short_stays_single_line_at_72px():
+    """Backward compat: short titles keep the pre-P2 single-drawtext form.
+
+    Byte-identical output for short titles is important because it keeps
+    previously-calibrated visual output unchanged and avoids needless cache
+    churn on existing renders.
+    """
+    frag = plan_title_drawtext("Hook title", out_w=1080)
+    assert frag is not None
+    assert frag.count("drawtext=") == 1
+    assert "fontsize=72" in frag
+    assert "y=80" in frag
+    assert "drawtext=text='Hook title'" in frag
+
+
+def test_plan_title_long_wraps_to_two_lines_below_72px():
+    """Long titles wrap at the best word boundary and shrink to fit.
+
+    "Prediction Markets vs Derivatives" is 33 chars — it overflows a 1080px
+    canvas at 72px. It must wrap into "Prediction Markets" / "vs Derivatives"
+    (balanced halves) at a smaller font.
+    """
+    frag = plan_title_drawtext("Prediction Markets vs Derivatives", out_w=1080)
+    assert frag is not None
+    assert frag.count("drawtext=") == 2, "long titles must split into two drawtext calls"
+    assert "drawtext=text='Prediction Markets'" in frag
+    assert "drawtext=text='vs Derivatives'" in frag
+    assert "fontsize=72" not in frag, "two-line layout must use a smaller font"
+    # Both lines share the same shrunken fontsize.
+    import re
+
+    sizes = re.findall(r"fontsize=(\d+)", frag)
+    assert len(sizes) == 2 and sizes[0] == sizes[1]
+    assert 44 <= int(sizes[0]) <= 64
+
+
+def test_plan_title_empty_returns_none():
+    assert plan_title_drawtext("", out_w=1080) is None
+    assert plan_title_drawtext("   ", out_w=1080) is None
+
+
+def test_plan_title_single_huge_word_shrinks_instead_of_wrapping():
+    """A single word cannot be word-wrapped; it must shrink to fit."""
+    frag = plan_title_drawtext("Supercalifragilisticexpialidocious", out_w=1080)
+    assert frag is not None
+    assert frag.count("drawtext=") == 1  # no wrap possible
+    assert "fontsize=72" not in frag
+
+
+def test_title_uses_arial_font_not_default_serif():
+    """Titles must render in Arial (matching the ASS subtitle font), not the
+    platform default which is Times New Roman on Windows.
+
+    Regression test for the "ugly serif title on the finance short" bug.
+    Both the single-line and the two-line drawtext variants must carry a
+    ``font=Arial`` directive so fontconfig resolves to the same family as
+    the subtitle ``Fontname=Arial``.
+    """
+    short = plan_title_drawtext("Hook title", out_w=1080)
+    assert short is not None
+    assert "font=Arial" in short
+
+    long_frag = plan_title_drawtext("Prediction Markets vs Derivatives", out_w=1080)
+    assert long_frag is not None
+    # Two drawtext calls => font directive appears twice, once per line.
+    assert long_frag.count("font=Arial") == 2
+
+
+def test_title_font_matches_subtitle_font_family():
+    """Title overlay and subtitle captions must read as one typographic
+    family. Both routes through ``build_ffmpeg_cmd`` should carry the same
+    Arial reference.
+    """
+    cmd = build_ffmpeg_cmd(
+        _req(
+            title_text="Hook title",
+            subtitle_path="/tmp/clip.ass",
+        )
+    )
+    fg = cmd[cmd.index("-filter_complex") + 1]
+    assert "font=Arial" in fg
+    assert "Fontname=Arial" in fg
+
+
+def test_long_title_pipes_through_build_ffmpeg_cmd():
+    """End-to-end: a long title routed through the full command builder
+    produces a valid filtergraph with two drawtext filters and no syntax
+    errors ffmpeg would choke on.
+    """
+    cmd = build_ffmpeg_cmd(_req(title_text="Prediction Markets vs Derivatives"))
+    fg = cmd[cmd.index("-filter_complex") + 1]
+    assert fg.count("drawtext=") == 2
+    assert "[v_prepad]drawtext=text='Prediction Markets'" in fg
+    assert "[vout]" in fg
+    assert ";;" not in fg  # no empty chain links
+    assert ",," not in fg  # no stray commas

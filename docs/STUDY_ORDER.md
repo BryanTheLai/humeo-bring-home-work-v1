@@ -15,7 +15,7 @@ Blunt: read in this order so you always know **what runs** before **why it is sh
 
 ## Block 3 — Afternoon (2 hours): paper shortcut + engine surface
 
-6. **`docs/hive_paper_blunt_guide.md`** — Fast recap; cross-check you understood §9 of the long breakdown.
+6. **`docs/hive-paper/hive_paper_blunt_guide.md`** — Fast recap; cross-check you understood §9 of the long breakdown.
 7. **`humeo-core/docs/ARCHITECTURE.md`** — Rocket metaphor mapped to files.
 8. **`humeo-core/docs/MCP_USAGE.md`** — How to point an MCP client at the server (`humeo-core` command; `humeo-mcp` remains an install alias).
 

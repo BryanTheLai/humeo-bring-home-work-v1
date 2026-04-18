@@ -35,6 +35,16 @@ def clip_selection_prompts(
     return system, user
 
 
+def hook_detection_system_prompt() -> str:
+    """Return the system prompt for Stage 2.25 hook detection.
+
+    The user message is built in :mod:`humeo.hook_detector` because the
+    segment listing is dynamic per-clip.
+    """
+    env = jinja2.Environment(loader=_prompt_loader(), autoescape=False, trim_blocks=True)
+    return env.get_template("hook_detection_system.jinja2").render()
+
+
 def content_pruning_system_prompt(
     *,
     min_dur: float,

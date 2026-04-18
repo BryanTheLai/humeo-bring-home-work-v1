@@ -54,12 +54,33 @@ class PipelineConfig:
     # When True, render stage overwrites existing output files.
     overwrite_outputs: bool = False
 
+    # Stage 2.25 - hook detection. The clip selector is unreliable at
+    # localising the hook sentence and tends to echo the 0.0-3.0s placeholder
+    # from the prompt verbatim. This dedicated stage reads each candidate
+    # window and returns a real hook window per clip, which Stage 2.5 then
+    # uses to clamp pruning safely. When False, the clip-selection hook
+    # (possibly a placeholder) is carried through unchanged.
+    detect_hooks: bool = True
+    # When True, re-run the hook-detection LLM even when hooks.meta.json matches.
+    force_hook_detection: bool = False
+
     # Stage 2.5 - inner-clip content pruning (HIVE "irrelevant content pruning"
     # applied at clip scale). One of: off | conservative | balanced | aggressive.
     # See ``src/humeo/content_pruning.py`` for the caps and the prompt.
     prune_level: str = "balanced"
     # When True, re-run the pruning LLM even when prune.meta.json matches.
     force_content_pruning: bool = False
+
+    # Stage 2 - candidate over-generation. The selector now asks Gemini for a
+    # pool of candidates (``clip_selection_candidate_count``), scores them,
+    # and keeps the top ones that pass ``clip_selection_quality_threshold``.
+    # We always keep at least ``clip_selection_min_kept`` clips even when
+    # none pass the threshold, so rendering never blocks on a weak transcript.
+    # See ``src/humeo/clip_selector.py`` for the ranking logic.
+    clip_selection_candidate_count: int = 12
+    clip_selection_quality_threshold: float = 0.70
+    clip_selection_min_kept: int = 5
+    clip_selection_max_kept: int = 8
 
     # Subtitle rendering / cue shaping.
     # Values are in **output pixels** for a 1080x1920 short: libass is pinned to

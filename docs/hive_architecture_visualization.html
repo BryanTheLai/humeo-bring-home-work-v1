@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HIVE Inspired Architecture</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --surface: #ffffff;
+      --ink: #141a24;
+      --muted: #5e6a7d;
+      --line: #d7deea;
+      --done: #118a52;
+      --progress: #a25b00;
+      --backlog: #7c8699;
+      --done-bg: #e8f7ef;
+      --progress-bg: #fff3e2;
+      --backlog-bg: #f1f4f9;
+      --shadow: 0 8px 24px rgba(20, 26, 36, 0.08);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top right, #eef3ff, transparent 40%), var(--bg);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 14px 48px;
+    }
+
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px 16px;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: clamp(20px, 4.5vw, 34px);
+      line-height: 1.15;
+    }
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: clamp(14px, 2.6vw, 16px);
+    }
+
+    .legend {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 5px 10px;
+      border: 1px solid transparent;
+      font-weight: 600;
+    }
+    .pill.done { background: var(--done-bg); color: var(--done); border-color: #b9e7cd; }
+    .pill.progress { background: var(--progress-bg); color: var(--progress); border-color: #ffd7a1; }
+    .pill.backlog { background: var(--backlog-bg); color: var(--backlog); border-color: #d8dfec; }
+
+    .section {
+      margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .section h2 {
+      margin: 0 0 8px;
+      font-size: clamp(18px, 3vw, 24px);
+    }
+    .section .sub {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .graph {
+      display: grid;
+      gap: 10px;
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px;
+      position: relative;
+      min-height: 104px;
+      display: grid;
+      gap: 4px;
+      align-content: start;
+    }
+
+    .node .icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .node .title {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .node .desc {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .node .status {
+      margin-top: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .node.done { border-color: #b7e4cc; background: #f5fcf8; }
+    .node.done .status { color: var(--done); }
+
+    .node.progress { border-color: #ffd7a1; background: #fffaf2; }
+    .node.progress .status { color: var(--progress); }
+
+    .node.backlog {
+      border-color: #d6dfec;
+      background: #f8fafd;
+      opacity: 0.62;
+      filter: saturate(0.75);
+    }
+    .node.backlog .status { color: var(--backlog); }
+
+    .arrow-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: -3px;
+      margin-bottom: -1px;
+    }
+    .arrow {
+      text-align: center;
+      color: #90a0ba;
+      font-size: 18px;
+      font-weight: 800;
+      user-select: none;
+    }
+    .arrow.blank { opacity: 0; }
+
+    .tracks {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(170px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .track {
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      padding: 9px;
+      background: #fcfdff;
+    }
+    .track h3 {
+      margin: 0 0 6px;
+      font-size: 13px;
+    }
+    .track p {
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .keylist {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 8px;
+    }
+    .keyitem {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 8px 10px;
+      font-size: 12px;
+      color: #2d3748;
+    }
+    .keyitem b { font-size: 12px; }
+
+    @media (max-width: 900px) {
+      .flow-row, .arrow-row {
+        grid-template-columns: 1fr;
+      }
+      .arrow {
+        transform: rotate(90deg);
+        line-height: 1;
+      }
+      .arrow.blank { display: none; }
+      .tracks, .keylist {
+        grid-template-columns: 1fr;
+      }
+      .node { min-height: unset; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <h1>HIVE Inspired Architecture for Investment Videos</h1>
+      <p>
+        Based on your code and docs. Shows the current pipeline and the full HIVE-inspired target.
+      </p>
+      <div class="legend">
+        <span class="pill done">✅ Done</span>
+        <span class="pill progress">🟧 In Progress</span>
+        <span class="pill backlog">🔹 Backlogged</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Current Working Flow (What Runs Today)</h2>
+      <p class="sub">From `docs/PIPELINE.md`: ingest, select, prune, render.</p>
+
+      <div class="graph">
+        <div class="flow-row">
+          <article class="node done">
+            <div class="icon">🎬</div>
+            <div class="title">Input + Ingest</div>
+            <div class="desc">Download, extract audio, transcribe, cache.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node done">
+            <div class="icon">🤖</div>
+            <div class="title">Clip Selection</div>
+            <div class="desc">LLM scores candidate windows.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node done">
+            <div class="icon">🪝</div>
+            <div class="title">Hook Detection</div>
+            <div class="desc">Find hook window per clip.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node done">
+            <div class="icon">✂️</div>
+            <div class="title">Content Pruning</div>
+            <div class="desc">Trim low-value lead-in and tail.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node done">
+            <div class="icon">📱</div>
+            <div class="title">Render + Overlay</div>
+            <div class="desc">Render 9:16 shorts with captions.</div>
+            <div class="status">Done</div>
+          </article>
+        </div>
+        <div class="arrow-row">
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow blank">→</div>
+        </div>
+      </div>
+
+      <div class="tracks">
+        <div class="track">
+          <h3>🧾 Core Artifacts</h3>
+          <p>`transcript.json`, `clips.json`, `hooks.json`, `prune.json`, `short_*.mp4`.</p>
+        </div>
+        <div class="track">
+          <h3>⚙️ Design Principle</h3>
+          <p>Strict JSON handoffs. Cached stages. Deterministic FFmpeg compile.</p>
+        </div>
+        <div class="track">
+          <h3>🎯 Domain Fit</h3>
+          <p>Investment videos -> high-signal shorts.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Full Planned Architecture (HIVE Alternative You Are Building)</h2>
+      <p class="sub">Full target map. Backlogged items are faded.</p>
+
+      <div class="graph">
+        <div class="flow-row">
+          <article class="node done">
+            <div class="icon">🎞️</div>
+            <div class="title">A1. Media Ingest</div>
+            <div class="desc">Source capture, ASR, keyframes, scene cuts.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node backlog">
+            <div class="icon">🧠</div>
+            <div class="title">A2. Narrative Context</div>
+            <div class="desc">Scene captions, global summary, value thread.</div>
+            <div class="status">Backlogged</div>
+          </article>
+          <article class="node backlog">
+            <div class="icon">👤</div>
+            <div class="title">A3. Character + Dialogue Fusion</div>
+            <div class="desc">Speaker attribution and OCR+ASR correction.</div>
+            <div class="status">Backlogged</div>
+          </article>
+          <article class="node backlog">
+            <div class="icon">🗂️</div>
+            <div class="title">A4. Cross-Episode Memory</div>
+            <div class="desc">Persistent narrative state across episodes.</div>
+            <div class="status">Backlogged</div>
+          </article>
+          <article class="node progress">
+            <div class="icon">🏗️</div>
+            <div class="title">B. Structured Editing Core</div>
+            <div class="desc">Highlight -> Hook/Outro -> Pruning.</div>
+            <div class="status">In Progress</div>
+          </article>
+        </div>
+
+        <div class="arrow-row">
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow blank">→</div>
+        </div>
+
+        <div class="flow-row">
+          <article class="node done">
+            <div class="icon">📈</div>
+            <div class="title">B1. Highlight Ranking</div>
+            <div class="desc">Rule-scored finance highlights.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node progress">
+            <div class="icon">🪝</div>
+            <div class="title">B2. Hook + Outro Boundaries</div>
+            <div class="desc">Optimize start and end windows.</div>
+            <div class="status">In Progress</div>
+          </article>
+          <article class="node done">
+            <div class="icon">🧹</div>
+            <div class="title">B3. Coarse Content Pruning</div>
+            <div class="desc">Clean inner windows with safety checks.</div>
+            <div class="status">Done</div>
+          </article>
+          <article class="node backlog">
+            <div class="icon">🔬</div>
+            <div class="title">B4. Micro-Pruning</div>
+            <div class="desc">Silence and filler micro-cuts.</div>
+            <div class="status">Backlogged</div>
+          </article>
+          <article class="node done">
+            <div class="icon">🎥</div>
+            <div class="title">C. Compile + Publish</div>
+            <div class="desc">Compile timeline and render final shorts.</div>
+            <div class="status">Done</div>
+          </article>
+        </div>
+
+        <div class="arrow-row">
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow">→</div>
+          <div class="arrow blank">→</div>
+        </div>
+      </div>
+
+      <div class="keylist">
+        <div class="keyitem"><b>Current state:</b> HIVE-inspired core is running for investment videos.</div>
+        <div class="keyitem"><b>In progress:</b> Hook/outro accuracy and pruning quality.</div>
+        <div class="keyitem"><b>Backlogged:</b> Narrative context, OCR fusion, memory, micro-pruning.</div>
+        <div class="keyitem"><b>Design:</b> Clear flow, clear status, low visual noise.</div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
