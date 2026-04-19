@@ -2,6 +2,8 @@
 
 This document describes **`humeo.pipeline.run_pipeline`**: what runs when, what is cached, what Gemini returns, and how data flows into ffmpeg.
 
+**Other docs:** index at [`README.md`](README.md) in this folder. Prompt-vs-code gaps (e.g. ranking): [`KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`](KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md).
+
 Visual map (HIVE-inspired, static HTML): [hive_architecture_visualization.html](hive_architecture_visualization.html) — also hosted via GitHub Pages if your fork enables it (see [SHARING.md](SHARING.md)).
 
 ## High-level flow
@@ -113,6 +115,11 @@ Policy (implemented in `humeo.clip_selector.rank_and_filter_clips`):
    more than 5 shorts instead of being artificially capped.
 5. Renumber `clip_id` to `001..NNN` in rank order so downstream artifacts
    (keyframes, subtitles, filenames) stay dense and ordered.
+
+**Rank signal:** only `virality_score` (and `needs_review`) feed the ranker.
+The clip-selection prompt may ask for `reasoning` / `score_breakdown`; those
+keys are **not** on the `Clip` schema and are **dropped** when parsing — see
+[`docs/KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`](KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md) §1.
 
 The raw LLM response is cached verbatim (`clip_selection_raw.json`), so you
 can re-rank a cached pool without another LLM call by editing the thresholds.

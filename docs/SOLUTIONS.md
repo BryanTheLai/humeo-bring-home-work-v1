@@ -162,7 +162,7 @@ This is the **Comprehensive Caption** module (§3.1.5) specialized for layout, p
 8. **Wrote 21 new tests.** `test_vision.py` (15), `test_face_detect.py` (6), plus 2 new server-tool tests. All pass.
 9. **Fixed pre-existing MCP import bug.** `from mcp.server.fastmcp import FastMCP` didn't exist in `mcp 1.1.2`. Bumped to `mcp[cli]>=1.2.0`; upgraded installed copy; `test_server_tools.py` now collects and runs.
 10. **Made `src/humeo/reframe_ffmpeg.py` the only product render path.** It is now a thin adapter that builds a `LayoutInstruction` from the shared `Clip` schema and calls `humeo_core.primitives.compile.render_clip`.
-11. **Collapsed the root pipeline.** Removed the extra cut/reframe/finish pass. The product pipeline now does: download → transcript → clip select → ASS captions → final render.
+11. **Collapsed the root pipeline.** Removed the extra cut/reframe/finish pass. The product pipeline now matches **`docs/PIPELINE.md`**: ingest → clip selection → hook detection → content pruning → layout vision → ASS captions → final render.
 12. **Wired top-level pytest.** Root `pyproject.toml` now has `testpaths = ["tests", "humeo-core/tests"]`. `tests/test_reframe_ffmpeg.py` covers the adapter.
 13. **Ran ruff --fix.** Removed dead imports and kept the suite green.
 14. **Renamed package folder `humeo-mcp/` → `humeo-core/`** and Python package `humeo_mcp` → `humeo_core`. PyPI/local project name is `humeo-core`. Console entry points: **`humeo-core`** (primary) and **`humeo-mcp`** (same `main()`, for backward-compatible MCP client configs).
@@ -171,81 +171,40 @@ This is the **Comprehensive Caption** module (§3.1.5) specialized for layout, p
 
 ## 7. Architecture as it stands today
 
-```
-long-to-shorts/
-├── .gitignore                   ← new, repo-wide ignores
-├── pyproject.toml               ← humeo package, now depends on humeo-core; pytest wired
-├── tests/
-│   └── test_reframe_ffmpeg.py   ← adapter tests for reframe → compile
-├── src/humeo/                   ← thin product wrapper
-│   ├── cli.py
-│   ├── clip_selector.py         ← uses Pydantic Clip from humeo-core
-│   ├── config.py                ← minimal product config
-│   ├── cutter.py                ← subtitle generation only
-│   ├── ingest.py
-│   ├── pipeline.py              ← download → transcript → select → SRT → render
-│   └── reframe_ffmpeg.py        ← thin adapter into humeo-core render primitive
-├── humeo-core/                   ← reusable deterministic primitives
-│   ├── pyproject.toml           ← mcp[cli]>=1.2.0, new [face]/[vision]/[dev] extras
-│   ├── src/humeo_core/
-│   │   ├── __init__.py          ← exports BoundingBox, SceneRegions
-│   │   ├── server.py            ← adds detect_scene_regions, classify_scenes_with_vision
-│   │   ├── schemas.py           ← + BoundingBox, SceneRegions
-│   │   └── primitives/
-│   │       ├── classify.py      ← pixel heuristic / LLM hook
-│   │       ├── compile.py       ← ffmpeg command builder + runner
-│   │       ├── face_detect.py   ← new, MediaPipe → SceneRegions
-│   │       ├── ingest.py        ← scene detection + keyframes + ASR
-│   │       ├── layouts.py       ← 5 fixed 9:16 filtergraphs (max 2 items)
-│   │       ├── select_clips.py  ← density-based clip picker
-│   │       └── vision.py        ← new, vision-LLM + OCR → SceneRegions
-│   └── tests/                   ← 75 tests (package primitives + MCP surface)
-└── docs/
-    ├── hive-paper/hive_paper_blunt_guide.md
-    ├── hive-paper/PAPER_BREAKDOWN.md  ← full first-principles paper breakdown
-    ├── PIPELINE.md              ← product `run_pipeline` stages + caches
-    ├── STUDY_ORDER.md           ← suggested reading order (e.g. one-day prep)
-    └── SOLUTIONS.md             ← this file
-```
+**Layout:** `src/humeo/` (CLI + pipeline) depends on `humeo-core/` (schemas, primitives, MCP server). Product stages are **`docs/PIPELINE.md`**; this section is not a second pipeline spec.
+
+**Directory tree:** Use the repo as checked out on disk (`tree` / IDE). **Markdown index:** [`docs/README.md`](README.md).
 
 ---
 
-## 8. Test inventory (119 passing, root + humeo-core)
+## 8. Tests
 
-Run `uv run pytest` from the repo root (`testpaths` includes `tests` and `humeo-core/tests`).
+Run from repo root:
 
-| Location | Tests | What it covers |
-|----------|------:|----------------|
-| `humeo-core/tests/test_schemas.py` | 10 | Pydantic validation across schemas |
-| `humeo-core/tests/test_layouts.py` | 21 | 9:16 layout filtergraphs |
-| `humeo-core/tests/test_layout_bbox.py` | 1 | Split bbox crop planning |
-| `humeo-core/tests/test_classify.py` | 3 | Pixel-heuristic scene classifier |
-| `humeo-core/tests/test_face_detect.py` | 6 | MediaPipe → `SceneRegions` (stubbed) |
-| `humeo-core/tests/test_vision.py` | 15 | Vision LLM + OCR bbox primitive |
-| `humeo-core/tests/test_select_clips.py` | 3 | Density-based clip picker |
-| `humeo-core/tests/test_compile.py` | 9 | ffmpeg command builder + dry-run |
-| `humeo-core/tests/test_server_tools.py` | 7 | MCP tool surface |
-| **Subtotal `humeo-core/tests`** | **75** | |
-| `tests/test_ass_subtitles.py` | 6 | ASS subtitle formatting |
-| `tests/test_clip_selection_cache.py` | 5 | Clip selection cache |
-| `tests/test_clip_selector.py` | 6 | Gemini clip parsing |
-| `tests/test_ingest_openai_chunks.py` | 5 | Ingest chunk handling |
-| `tests/test_layout_vision_unit.py` | 2 | Layout vision helpers |
-| `tests/test_prompt_loader.py` | 1 | Jinja prompt loading |
-| `tests/test_reframe_ffmpeg.py` | 4 | `humeo` → `humeo_core.compile` adapter |
-| `tests/test_render_window.py` | 3 | Trim → export window |
-| `tests/test_transcript_align.py` | 3 | Word align into clip timeline |
-| `tests/test_video_cache.py` | 9 | Video cache / work dir |
-| **Subtotal `tests/`** | **44** | |
-| **Total** | **119** | |
+```bash
+uv run pytest
+```
+
+Per-package discovery (counts change as tests are added):
+
+```bash
+uv run pytest humeo-core/tests --collect-only -q
+uv run pytest tests --collect-only -q
+```
+
+Do not treat a frozen row-count table in git as the source of truth—**pytest is**.
 
 ---
 
 ## 9. Known gaps (pending work, sized)
 
+**Update (2026-04-19):** Inner-clip **content pruning** (HIVE-style Rₚ at clip scale) and **hook detection** ship in `src/humeo/pipeline.py` — see **`docs/PIPELINE.md`**. The row below on pruning was written before that landed; it is kept struck-through for history.
+
+Prompt-vs-code gaps (e.g. `score_breakdown` not ranked, unused `shorts_title` / `hashtags`) live in **`docs/KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`**.
+
 | Gap                                                             | Effort | Impact |
 |-----------------------------------------------------------------|--------|--------|
-| `Content Pruning` sub-task (HIVE §3.2.3) not yet implemented.   | ~1 day | Denser shorts; higher Engagement metric.                                  |
+| ~~`Content Pruning` sub-task (HIVE §3.2.3) not yet implemented.~~ **Shipped** (`content_pruning.py`, Stage 2.5). | — | — |
 | Memory module (HIVE §3.1.6) for multi-episode state.            | ~2 day | Required if we extend to full drama series.                               |
 | Vision-LLM provider wiring (Gemini/OpenAI client).              | ~2 hr  | Vision primitive is pluggable but currently needs caller to supply `vision_fn`. |
 | End-to-end integration test on the target Cathie Wood video.    | ~1 hr  | Confidence. See `TARGET_VIDEO_ANALYSIS.md` for why that video is the canonical test case. |
@@ -262,7 +221,7 @@ Anyone editing this repo in the future: don't violate these.
 3. **All bbox coordinates are normalized [0, 1].** Never pixels.
 4. **Detectors are swappable; renderer is fixed.** If you add a fourth detector, it must emit `SceneRegions`.
 5. **Keep the product wrapper thin.** New reusable media logic belongs in `humeo-core`, not in `src/humeo`.
-6. **Cache aggressively.** `.humeo_work/` stores scene timestamps, transcripts, keyframes. Retries re-run model calls only.
+6. **Cache aggressively.** Work dir layout and env vars: **`docs/ENVIRONMENT.md`**. Retries should re-run model calls only, not deterministic extraction.
 7. **Schemas live in `humeo_core.schemas`. One source of truth.**
 
 ---

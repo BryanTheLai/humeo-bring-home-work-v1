@@ -2,6 +2,8 @@
 
 Blunt: read in this order so you always know **what runs** before **why it is shaped** and **where the code is**.
 
+Full index of every `docs/*.md` file: **`docs/README.md`**.
+
 ## Block 1 — Morning (2–3 hours): product truth
 
 1. **`docs/PIPELINE.md`** — The actual `run_pipeline` stages, caches, when Gemini runs, and what files land on disk. This is the spine.
@@ -39,9 +41,10 @@ Skim in this order (do not deep-read every line unless you have time):
 
 ## Optional / if time
 
+- **`docs/KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`** — Where prompts diverge from code (e.g. `score_breakdown` not ranked; hook vs export window; unused `clips.json` fields).
 - **`docs/SHARING.md`** — Raw GitHub links, Pages, why MP4s are not in the repo.
-- **`docs/podcast-to-shorts.md`**, **`docs/humeo.md`** — Product wording.
-- **`docs/TODO.md`** — Honest backlog (pruning, memory module).
+- **`docs/podcast-to-shorts.md`**, **`docs/humeo.md`** — Product wording (short; defers to `PIPELINE.md`).
+- **`docs/TODO.md`** — Backlog and north-star milestones (e.g. `narrative_context.json`, layout fixes).
 - **`docs/bryans_ideas.md`** — Brainstorm context; shipped bbox idea is spelled in `SOLUTIONS.md` §4.
 
 ## Same-day verification (15 minutes)
@@ -51,4 +54,4 @@ uv sync --extra dev
 uv run pytest
 ```
 
-If you only remember **three** artifacts after one day, remember: **`PIPELINE.md`**, **`SOLUTIONS.md`**, **`hive-paper/PAPER_BREAKDOWN.md` §9**.
+If you only remember **four** artifacts after one day, remember: **`PIPELINE.md`**, **`SOLUTIONS.md`**, **`hive-paper/PAPER_BREAKDOWN.md` §9**, and **`KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`** when the model output does not match runtime behavior.

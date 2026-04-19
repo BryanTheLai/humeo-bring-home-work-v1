@@ -23,20 +23,9 @@ This repo exists to turn long-form chart-heavy interviews into 9:16 shorts. This
 | 7   | 42:30      | Credit Markets Show No Signs Of Stress            | `sit_center`                |
 | 8   | 43:30      | Innovation Could Power The Next Bull Market       | `sit_center`                |
 
-## Why Bryan's scene-change + vision-LLM + OCR path matters here
+## Why vision + OCR beats face-only here
 
-The MediaPipe-only backend would do badly on this video:
-
-- **Chart scenes have no face**, so MediaPipe falls through to blurred pad — the chart content itself is not emphasized.
-- **The speaker shares screen**, so the face bbox is pushed far right. The heuristic handles this, but it can't read the chart title or the axis labels — it just knows "face on right → assume chart left."
-
-The vision-LLM + OCR primitive (`humeo_core.primitives.vision`) solves this directly:
-
-- Reads the chart title ("PPI vs CPI divergence").
-- Returns both `person_bbox` and `chart_bbox` with accurate geometry.
-- Surfaces the chart's OCR text so a render/title layer can echo the on-screen label.
-
-For this exact video, the bbox primitive is the *right* backend.
+Chart-heavy chapters need **slide text** and **correct split geometry**; MediaPipe-only paths lose faces on pure slides and heuristics cannot read axis labels. The vision-LLM + bbox path (`humeo_core.primitives.vision`) is the right backend for this source—**design and file pointers:** [`docs/SOLUTIONS.md`](SOLUTIONS.md) §3–§4.
 
 ## Suggested product run
 

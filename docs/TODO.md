@@ -17,17 +17,9 @@ not replace the detailed sections below.
 
 ### Already implemented (today’s codebase)
 
-- **Product pipeline** (`ingest → clip selection → hook detection → content pruning → layout vision → render`) as in `src/humeo/pipeline.py` and `docs/PIPELINE.md`.
-- **Frames + audio + timing (proof):**
-  - **Video + audio:** `source.mp4` + `ffmpeg` audio extract in `humeo.ingest` (`extract_audio`).
-  - **Timing:** `transcript.json` with segment/word times; clip windows are `start_time_sec` / `end_time_sec` on `Clip`; `clip_for_render` applies trims; `humeo_core.primitives.compile` cuts with `ffmpeg` `-ss` / `-t`.
-  - **Frames (sparse):** one exported keyframe per **selected clip window** via `humeo_core.primitives.ingest.extract_keyframes` (not dense frame understanding of the whole hour).
-- **Multimodal, but split across stages (proof):**
-  - **Speech side:** clip selector prompt is built only from timed transcript lines (`humeo.clip_selector.build_prompt` → segment `[start-end] text`). No pixels at clip-select time.
-  - **Visual side:** after clips exist, **one keyframe per clip** goes to Gemini vision; JSON forces layout + normalized bboxes (`src/humeo/layout_vision.py`, `GEMINI_LAYOUT_VISION_PROMPT`).
-- **Decomposed editing (proof):** separate LLM calls and caches for (1) clip JSON vs (2) per-clip layout JSON; deterministic ffmpeg compile is its own primitive — not one prompt that outputs final video.
-- **Strict JSON contracts:** `humeo_core.schemas` + `response_mime_type="application/json"` on Gemini calls.
-- **Monorepo layout:** `humeo-core/` engine + `src/humeo/` product (package rename to `humeo_core` completed; see `docs/SOLUTIONS.md` chronology).
+Do **not** duplicate the stage list here — **`docs/PIPELINE.md`** is canonical (`run_pipeline` in `src/humeo/pipeline.py`).
+
+In one line: **ingest → clip selection → hook → inner-clip prune → one keyframe per clip + layout vision → ASS + ffmpeg render**; strict `humeo_core.schemas`; transcript-only at clip-select time, vision after clips exist. Chronology: **`docs/SOLUTIONS.md`** §6.
 
 ### Not implemented yet (this TODO’s “north star” extras)
 
@@ -589,8 +581,9 @@ Explicit. So we don't silently scope-creep into HIVE.
 
 - **No character memory across episodes.** HIVE §3.6 memory module is
   valuable for series but adds real complexity.
-- **No content-pruning sub-agent.** HIVE §3.2.3 ("Rₚ"). Worth doing later;
-  covered as a gap in `docs/SOLUTIONS.md §9`.
+- **No *scene-level* pruning sub-agent** (HIVE Rₚ deleting whole scenes inside
+  a drama window). **Inner-clip** pruning is **already shipped** (`content_pruning.py`).
+  Prompt/schema gaps: `docs/KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`.
 - **No training data, no custom models.** Everything is prompting +
   schemas.
 - ~~**No new layout kinds.** Still exactly three thrusters.~~

@@ -2,6 +2,8 @@
 
 Full, first-principles breakdown. No filler. No hedging.
 
+**Short path:** One-page summary + how the repo maps to the paper → [`hive_paper_blunt_guide.md`](hive_paper_blunt_guide.md). **Product runtime** (what actually ships) → [`../PIPELINE.md`](../PIPELINE.md).
+
 Source: https://arxiv.org/html/2507.02790v1
 Title: *From Long Videos to Engaging Clips: A Human-Inspired Video Editing Framework with Multimodal Narrative Understanding*
 Authors: ByteDance + USTC (Wang et al., 2025).

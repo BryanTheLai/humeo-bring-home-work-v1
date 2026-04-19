@@ -66,6 +66,7 @@ Use **`--work-dir`** or **`--no-video-cache`** to control where `source.mp4` and
 
 | Doc | Purpose |
 |-----|---------|
+| **`docs/README.md`** | Index of all files under `docs/` |
 | **`docs/STUDY_ORDER.md`** | Read order for onboarding |
 | **`docs/PIPELINE.md`** | Stages, caches, JSON contracts |
 | **`docs/ENVIRONMENT.md`** | Keys, env vars, cache layout |
@@ -75,6 +76,7 @@ Use **`--work-dir`** or **`--no-video-cache`** to control where `source.mp4` and
 | **`docs/hive-paper/PAPER_BREAKDOWN.md`** | HIVE paper, file mapping §9 |
 | **`docs/hive-paper/hive_paper_blunt_guide.md`** | Short HIVE recap |
 | **`docs/TODO.md`** | Backlog |
+| **`docs/KNOWN_LIMITATIONS_AND_PROMPT_CONTRACT_GAP.md`** | Prompt vs code (ranking, hooks, unused fields, scene detect) |
 | **`docs/SOLUTIONS.md`** | Design rationale |
 | **`TERMINOLOGY.md`** | Glossary |
 

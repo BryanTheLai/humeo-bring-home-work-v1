@@ -100,4 +100,6 @@ After a successful download, yt-dlp writes **`source.info.json`** next to **`sou
 
 ## See also
 
+- **[`docs/README.md`](README.md)** — Index of all documentation under `docs/`.
+- **[`docs/PIPELINE.md`](PIPELINE.md)** — Stages and cache invalidation (overlaps CLI flags above only by cross-reference; no duplicate tables maintained here).
 - **[`docs/SHARING.md`](SHARING.md)** — Public repo vs raw file URLs vs GitHub Pages; why large media is not committed.

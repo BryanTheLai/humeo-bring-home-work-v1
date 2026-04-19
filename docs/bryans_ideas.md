@@ -1,3 +1,7 @@
+Brainstorm and market notes. **Shipped bbox / vision pipeline** is documented in [`docs/SOLUTIONS.md`](SOLUTIONS.md) §4 — not duplicated here.
+
+---
+
 # Core Ideas
 
 ## Transparent Prompt UI
