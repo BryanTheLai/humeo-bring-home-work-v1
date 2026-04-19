@@ -34,7 +34,6 @@ from pathlib import Path
 from typing import Any, Callable, Literal, TypeVar
 
 from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field, ValidationError
 
 from humeo_core.schemas import Clip
@@ -46,6 +45,7 @@ from humeo.config import (
     PipelineConfig,
 )
 from humeo.env import resolve_gemini_api_key
+from humeo.gemini_generate import gemini_generate_config
 from humeo.prompt_loader import content_pruning_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -642,7 +642,7 @@ def request_prune_decisions(
         response = client.models.generate_content(
             model=model_name,
             contents=user_text,
-            config=types.GenerateContentConfig(
+            config=gemini_generate_config(
                 system_instruction=system,
                 temperature=0.2,
                 response_mime_type="application/json",

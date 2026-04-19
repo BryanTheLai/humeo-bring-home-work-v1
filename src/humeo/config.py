@@ -25,7 +25,9 @@ TARGET_CLIP_COUNT = 5
 
 # Gemini model id (override with GEMINI_MODEL in .env or shell). See docs/ENVIRONMENT.md.
 GEMINI_MODEL = (os.environ.get("GEMINI_MODEL") or "gemini-3.1-flash-lite-preview").strip() or "gemini-3.1-flash-lite-preview"
-# Per-keyframe layout + bbox (unset = same as effective clip-selection model).
+# Optional *only* when layout vision should use a different id than clip selection
+# (e.g. cheaper model per keyframe). Empty unset → ``resolved_vision_model`` uses
+# ``GEMINI_MODEL`` / ``PipelineConfig.gemini_model`` (same multimodal stack).
 GEMINI_VISION_MODEL = (os.environ.get("GEMINI_VISION_MODEL") or "").strip() or None
 
 # ---------------------------------------------------------------------------

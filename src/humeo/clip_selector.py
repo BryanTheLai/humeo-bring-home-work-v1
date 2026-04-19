@@ -14,7 +14,8 @@ from pathlib import Path
 from typing import Callable, TypeVar
 
 from google import genai
-from google.genai import types
+
+from humeo.gemini_generate import gemini_generate_config
 
 from humeo_core.schemas import Clip, ClipPlan
 
@@ -212,7 +213,7 @@ def select_clips(
         response = client.models.generate_content(
             model=model_name,
             contents=user_text,
-            config=types.GenerateContentConfig(
+            config=gemini_generate_config(
                 system_instruction=system_prompt,
                 temperature=temperature,
                 response_mime_type="application/json",

@@ -23,6 +23,7 @@ from humeo_core.primitives.vision import layout_instruction_from_regions
 
 from humeo.config import GEMINI_MODEL, GEMINI_VISION_MODEL, PipelineConfig
 from humeo.env import resolve_gemini_api_key
+from humeo.gemini_generate import gemini_generate_config
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +40,10 @@ Return ONLY a JSON object with this exact shape:
 {
   "layout": "zoom_call_center" | "sit_center" | "split_chart_person" | "split_two_persons" | "split_two_charts",
   "person_bbox":        {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
+  "face_bbox":          {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
   "chart_bbox":         {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
   "second_person_bbox": {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
+  "second_face_bbox":   {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
   "second_chart_bbox":  {"x1": 0.0, "y1": 0.0, "x2": 1.0, "y2": 1.0} | null,
   "reason": "short rationale"
 }
@@ -48,15 +51,19 @@ Return ONLY a JSON object with this exact shape:
 Bbox rules:
 - All bbox coordinates are normalized 0..1 (left/top = 0, right/bottom = 1). Require x2 > x1 and y2 > y1 when a bbox is non-null.
 - person_bbox / second_person_bbox: tight box around each speaker's head AND upper body. If two speakers are visible, ``person_bbox`` is the LEFT speaker and ``second_person_bbox`` is the RIGHT speaker (by x-center).
+- face_bbox / second_face_bbox: TIGHT box around the SPEAKER'S FACE ONLY (forehead to chin, ear to ear). This is NOT the full body — exclude torso, arms, shoulders, tank top, mug, table. The face bbox drives horizontal framing in the 9:16 crop, so putting torso or arms in it will push the face off-screen.
+  * If the subject is shown in profile, the face_bbox still surrounds only the visible half of the head (ear to nose, forehead to chin). It should be roughly square-ish, not a tall body rectangle.
+  * ``face_bbox`` matches ``person_bbox`` (same speaker), ``second_face_bbox`` matches ``second_person_bbox``.
+  * Set face bbox to null ONLY if no face is visible at all (back of head, occluded, off-frame).
 - chart_bbox / second_chart_bbox: slide, chart, graph, or large on-screen graphic. If two charts are visible, ``chart_bbox`` is the LEFT chart and ``second_chart_bbox`` is the RIGHT chart.
 - The two bboxes of the same kind must not overlap meaningfully; they should partition the source frame into distinct regions.
 
 Layout selection (pick exactly one):
-- zoom_call_center: ONE person, tight webcam / video-call headshot filling much of the frame. person_bbox set; others null.
-- sit_center: ONE person, interview / seated framing, or when unsure. person_bbox set; others null.
-- split_chart_person: ONE chart + ONE person in distinct regions (webinar / explainer). Both person_bbox and chart_bbox set; second_* null.
-- split_two_persons: TWO visible speakers (interview two-up, podcast panel). person_bbox AND second_person_bbox set; chart bboxes null.
-- split_two_charts: TWO charts / slides side-by-side. chart_bbox AND second_chart_bbox set; person bboxes null.
+- zoom_call_center: ONE person, tight webcam / video-call headshot filling much of the frame. person_bbox + face_bbox set; others null.
+- sit_center: ONE person, interview / seated framing, or when unsure. person_bbox + face_bbox set; others null.
+- split_chart_person: ONE chart + ONE person in distinct regions (webinar / explainer). person_bbox + face_bbox + chart_bbox set; second_* null.
+- split_two_persons: TWO visible speakers (interview two-up, podcast panel). person_bbox + face_bbox AND second_person_bbox + second_face_bbox set; chart bboxes null.
+- split_two_charts: TWO charts / slides side-by-side. chart_bbox AND second_chart_bbox set; person/face bboxes null.
 
 When in doubt prefer ``sit_center``. Never output more than two of {person, chart} items in total.
 No markdown. JSON only."""
@@ -154,8 +161,10 @@ def _instruction_from_gemini_json(
         kind = LayoutKind.SIT_CENTER
 
     pb = _parse_bbox(data.get("person_bbox"))
+    fb = _parse_bbox(data.get("face_bbox"))
     cb = _parse_bbox(data.get("chart_bbox"))
     p2 = _parse_bbox(data.get("second_person_bbox"))
+    f2 = _parse_bbox(data.get("second_face_bbox"))
     c2 = _parse_bbox(data.get("second_chart_bbox"))
     reason = str(data.get("reason", ""))[:400]
 
@@ -179,6 +188,18 @@ def _instruction_from_gemini_json(
     )
 
     updates: dict[str, Any] = {}
+
+    # CENTERING FIX: the single-person 9:16 crop is driven by ``person_x_norm``.
+    # A ``person_bbox`` that spans head + torso + arms is fine for framing
+    # *extent* but its center_x can drift far from the actual face when the
+    # subject is in profile or asymmetric (one arm up, mug on the table, etc).
+    # Prefer the tight ``face_bbox`` center when the model gave us one so the
+    # face lands in the visual center of the vertical crop instead of the
+    # torso doing.
+    face_center = _face_center_x(fb, pb)
+    if face_center is not None:
+        updates["person_x_norm"] = face_center
+
     if kind == LayoutKind.SPLIT_CHART_PERSON and pb is not None and cb is not None:
         updates["split_chart_region"] = cb
         updates["split_person_region"] = pb
@@ -197,6 +218,40 @@ def _instruction_from_gemini_json(
     return instr
 
 
+def _face_center_x(
+    face: BoundingBox | None, person: BoundingBox | None
+) -> float | None:
+    """Pick a horizontal center to aim the 9:16 crop at.
+
+    Priority:
+    1. ``face`` bbox center when it looks reasonable (narrow, plausibly
+       inside the matching person bbox).
+    2. No override (caller keeps the person-bbox center, or the default 0.5
+       when neither was provided).
+
+    We sanity-check the face box because Gemini sometimes echoes the full
+    person bbox into ``face_bbox``. If the face bbox is as wide as the
+    person bbox, it gives us nothing new; fall back to the person center
+    rather than pretending we have a tighter signal.
+    """
+    if face is None:
+        return None
+    face_w = max(0.0, face.x2 - face.x1)
+    if face_w <= 0.0:
+        return None
+    # A real face in a 16:9 frame is rarely wider than ~35% of frame width,
+    # even for tight webcam framing. A face "bbox" that's wider than that
+    # almost certainly includes torso and is no better than person_bbox.
+    if face_w > 0.40:
+        return None
+    # If we have a person bbox too, require the face center to sit inside it
+    # — otherwise the model got confused and matched the wrong subject.
+    if person is not None:
+        if not (person.x1 - 0.02 <= face.center_x <= person.x2 + 0.02):
+            return None
+    return float(face.center_x)
+
+
 def _call_gemini_vision(keyframe_path: str, model_name: str) -> dict[str, Any]:
     path = Path(keyframe_path)
     data = path.read_bytes()
@@ -208,7 +263,7 @@ def _call_gemini_vision(keyframe_path: str, model_name: str) -> dict[str, Any]:
             types.Part.from_text(text=GEMINI_LAYOUT_VISION_PROMPT),
             types.Part.from_bytes(data=data, mime_type=mime),
         ],
-        config=types.GenerateContentConfig(
+        config=gemini_generate_config(
             temperature=0.2,
             response_mime_type="application/json",
         ),

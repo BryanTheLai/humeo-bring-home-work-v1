@@ -44,7 +44,6 @@ from pathlib import Path
 from typing import Any, Callable, TypeVar
 
 from google import genai
-from google.genai import types
 from pydantic import BaseModel, Field, ValidationError
 
 from humeo_core.schemas import Clip
@@ -52,6 +51,7 @@ from humeo_core.schemas import Clip
 from humeo.config import GEMINI_MODEL, PipelineConfig
 from humeo.content_pruning import _looks_like_default_hook, _segments_within_clip
 from humeo.env import resolve_gemini_api_key
+from humeo.gemini_generate import gemini_generate_config
 from humeo.prompt_loader import hook_detection_system_prompt
 
 logger = logging.getLogger(__name__)
@@ -414,7 +414,7 @@ def request_hook_decisions(
         response = client.models.generate_content(
             model=model_name,
             contents=user_text,
-            config=types.GenerateContentConfig(
+            config=gemini_generate_config(
                 system_instruction=system,
                 temperature=0.2,
                 response_mime_type="application/json",
