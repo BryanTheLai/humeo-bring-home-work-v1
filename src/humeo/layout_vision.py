@@ -648,19 +648,33 @@ def _call_gemini_vision(
     return raw, parsed
 
 
+def _fallback_layout_instruction(clip: Clip) -> LayoutInstruction:
+    """Best-effort render fallback when Stage 3 cannot produce vision boxes.
+
+    The selector already emits ``layout_hint`` from transcript semantics. If
+    frame sampling or the multimodal call fails, preserving that hint is much
+    safer than silently collapsing chart-heavy clips to ``sit_center``.
+    """
+
+    layout_hint = getattr(clip, "layout_hint", None)
+    layout_current = getattr(clip, "layout", None)
+    layout = layout_hint or layout_current or LayoutKind.SIT_CENTER
+    return LayoutInstruction(clip_id=clip.clip_id, layout=layout)
+
+
 def _fallback_merge(
-    clip_id: str,
+    clip: Clip,
     frame_instructions: list[LayoutInstruction],
 ) -> LayoutInstruction:
     if not frame_instructions:
-        return LayoutInstruction(clip_id=clip_id, layout=LayoutKind.SIT_CENTER)
+        return _fallback_layout_instruction(clip)
     counts: dict[LayoutKind, int] = {}
     for instr in frame_instructions:
         counts[instr.layout] = counts.get(instr.layout, 0) + 1
     dominant = max(counts.items(), key=lambda item: (item[1], item[0].value))[0]
     candidates = [instr for instr in frame_instructions if instr.layout == dominant]
     chosen = candidates[len(candidates) // 2]
-    return chosen.model_copy(update={"clip_id": clip_id})
+    return chosen.model_copy(update={"clip_id": clip.clip_id})
 
 
 def infer_layout_instructions(
@@ -685,13 +699,16 @@ def infer_layout_instructions(
         )
         warnings.extend(sample_warnings)
         if not sampled_frames:
-            out[clip.clip_id] = LayoutInstruction(clip_id=clip.clip_id, layout=LayoutKind.SIT_CENTER)
+            fallback = _fallback_layout_instruction(clip)
+            out[clip.clip_id] = fallback
             payload_by_clip[clip.clip_id] = {
-                "instruction": json.loads(out[clip.clip_id].model_dump_json()),
+                "instruction": json.loads(fallback.model_dump_json()),
                 "sampled_frames": [],
                 "frame_results": [],
-                "raw": {"error": "no sampled frames", "layout": "sit_center"},
-                "warnings": warnings + ["No sampled frames; defaulted to sit_center."],
+                "raw": {"error": "no sampled frames", "layout": fallback.layout.value},
+                "warnings": warnings + [
+                    f"No sampled frames; defaulted to {fallback.layout.value}."
+                ],
             }
             continue
 
@@ -765,7 +782,7 @@ def infer_layout_instructions(
             }
 
         if merged_instruction is None:
-            merged_instruction = _fallback_merge(clip.clip_id, frame_instructions)
+            merged_instruction = _fallback_merge(clip, frame_instructions)
 
         out[clip.clip_id] = merged_instruction
         payload_by_clip[clip.clip_id] = {

@@ -278,3 +278,80 @@ def test_infer_layout_instructions_records_request_budget_on_failure(monkeypatch
         "max_retries": _VISION_RETRY_ATTEMPTS,
     }
     assert "Layout vision model failed" in clip_payload["warnings"][0]
+
+
+def test_infer_layout_instructions_uses_layout_hint_when_sampling_unavailable(monkeypatch, tmp_path):
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"fake")
+
+    clip = SimpleNamespace(
+        clip_id="001",
+        start_time_sec=0.0,
+        end_time_sec=10.0,
+        keep_ranges_sec=[(0.0, 10.0)],
+        layout_hint=LayoutKind.SPLIT_CHART_PERSON,
+        layout=None,
+    )
+
+    monkeypatch.setattr(
+        "humeo.layout_vision._sample_clip_frames",
+        lambda *args, **kwargs: ([], ["OpenCV unavailable; cannot sample layout frames (No module named 'cv2')."]),
+    )
+
+    instructions, payload = infer_layout_instructions(
+        source,
+        [clip],
+        gemini_vision_model="gpt-5.4",
+        provider="azure",
+        keyframes_root=tmp_path / "keyframes",
+    )
+
+    assert instructions["001"].layout == LayoutKind.SPLIT_CHART_PERSON
+    clip_payload = payload["001"]
+    assert clip_payload["instruction"]["layout"] == "split_chart_person"
+    assert clip_payload["raw"]["layout"] == "split_chart_person"
+    assert clip_payload["warnings"][-1] == "No sampled frames; defaulted to split_chart_person."
+
+
+def test_infer_layout_instructions_uses_layout_hint_when_vision_call_fails(monkeypatch, tmp_path):
+    source = tmp_path / "source.mp4"
+    source.write_bytes(b"fake")
+
+    frame = SampledFrame(
+        frame_id="f0",
+        timestamp_sec=1.23,
+        path=str(tmp_path / "frame.jpg"),
+        width=1920,
+        height=1080,
+    )
+
+    clip = SimpleNamespace(
+        clip_id="001",
+        start_time_sec=0.0,
+        end_time_sec=10.0,
+        keep_ranges_sec=[(0.0, 10.0)],
+        layout_hint=LayoutKind.SPLIT_CHART_PERSON,
+        layout=None,
+    )
+
+    monkeypatch.setattr(
+        "humeo.layout_vision._sample_clip_frames",
+        lambda *args, **kwargs: ([frame], []),
+    )
+    monkeypatch.setattr(
+        "humeo.layout_vision._call_gemini_vision",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
+
+    instructions, payload = infer_layout_instructions(
+        source,
+        [clip],
+        gemini_vision_model="gpt-5.4",
+        provider="azure",
+        keyframes_root=tmp_path / "keyframes",
+    )
+
+    assert instructions["001"].layout == LayoutKind.SPLIT_CHART_PERSON
+    clip_payload = payload["001"]
+    assert clip_payload["instruction"]["layout"] == "split_chart_person"
+    assert clip_payload["raw"]["request"]["provider"] == "azure"
