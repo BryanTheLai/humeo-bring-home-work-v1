@@ -1,3 +1,5 @@
+# You can find better written code in [afterform](https://github.com/BryanTheLai/afterform) repo. Don't worry everything stays free forever.
+
 # Longs to short
 
 Long podcast or interview -> vertical 9:16 shorts. Pipeline: download, transcribe, structured LLM stages (clip selection, hook detection, content pruning, layout vision), then ffmpeg render.
